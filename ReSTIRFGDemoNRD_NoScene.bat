@@ -1,0 +1,1 @@
+build\windows-vs2022\bin\Release\Mogwai.exe --script=scripts\ReSTIR_FG_NRD.py
