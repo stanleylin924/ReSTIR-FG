@@ -12,41 +12,6 @@ struct Reservoir{
         weightSum = 0.f;
     }
 
-    //Init with full precision
-    __init(const uint4 packed){
-        M = packed.x;
-        targetFunc = asfloat(packed.y);
-        weightSum = asfloat(packed.z);
-        //Invalidate if nan or inf is present
-        if(isinf(weightSum) || isnan(weightSum)){
-            weightSum = 0;
-            M = 0;
-        }
-    }
-
-    //Init with reduced targedPDF precision
-    __init(const uint2 packed){
-        M = packed.x & 0xFFFF;
-        targetFunc = f16tof32(packed.x >> 16);
-        weightSum = asfloat(packed.y);
-        //Invalidate if nan or inf is present
-        if(isinf(weightSum) || isnan(weightSum)){
-            weightSum = 0;
-            M = 0;
-        }
-    }
-
-    //Pack for uint texture
-    uint4 pack(){        
-        return uint4(M, asuint(targetFunc), asuint(weightSum), 0);
-    }
-
-    uint2 packReduced()
-    {
-        return uint2((M & 0xFFFF) | (f32tof16(targetFunc) << 16), asuint(weightSum));
-    }
-    
-
     //Updates reservoir with new light sample. Returns true if the light sample was selected
     [mutating] bool updateReservoir(const float invSelectPdf,const float lstargetFunc, const float rnd){
         float risWeight = lstargetFunc * invSelectPdf;

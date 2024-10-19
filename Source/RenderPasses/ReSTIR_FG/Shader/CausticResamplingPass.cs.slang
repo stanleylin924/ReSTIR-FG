@@ -17,13 +17,8 @@ import FinalGatherData;
 
 #define BIAS_CORRECTION 1
 
-#if USE_REDUCED_RESERVOIR_FORMAT
-    RWTexture2D<uint2> gReservoir[2];
-    Texture2D<uint2> gReservoirPrev[2];
-#else
-    RWTexture2D<uint4> gReservoir[2];
-    Texture2D<uint4> gReservoirPrev[2];
-#endif
+RWStructuredBuffer<Reservoir> gReservoir[2];
+StructuredBuffer<Reservoir> gReservoirPrev[2];
 
 RWStructuredBuffer<CausticSample> gCausticSample[2];
 StructuredBuffer<CausticSample> gCausticSamplePrev[2];
@@ -128,7 +123,7 @@ void temporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reservoir r
     //If temporal surface was found, resample the previous sample
     if (foundTemporalSurface)
     {
-        Reservoir prev = Reservoir(gReservoirPrev[buffIdx][idx]);
+        Reservoir prev = gReservoirPrev[buffIdx][index2Dto1D(idx, gFrameDim.x)];
         prev.M = min(prev.M, historyLimit);
         previousM = prev.M;
 
@@ -283,7 +278,7 @@ void spatiotemporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reser
         }
             
         //If neighbor surface has passed the tests get reservoir and compair them
-        Reservoir sampledReservoir = Reservoir(gReservoirPrev[buffIdx][idx]);
+        Reservoir sampledReservoir = gReservoirPrev[buffIdx][index2Dto1D(idx, gFrameDim.x)];
         sampledReservoir.M = min(sampledReservoir.M, historyLimit);
 
         CausticSample cauPrev = gCausticSamplePrev[buffIdx][index2Dto1D(idx, gFrameDim.x)];
@@ -382,7 +377,7 @@ void main(uint2 dTid : SV_DispatchThreadID)
     CausticSample causticData = CausticSample();
 
     //Load current reservoir
-    Reservoir current = Reservoir(gReservoir[0][dTid]);
+    Reservoir current = gReservoir[0][index2Dto1D(dTid, gFrameDim.x)];
     if (current.M > 0)
     {
         causticData = gCausticSample[0][index2Dto1D(dTid, gFrameDim.x)];
@@ -399,11 +394,7 @@ void main(uint2 dTid : SV_DispatchThreadID)
 
 
     //Store reservoir and sample data    
-#if USE_REDUCED_RESERVOIR_FORMAT
-    gReservoir[0][dTid] = r.packReduced();
-#else
-    gReservoir[0][dTid] = r.pack();
-#endif
+    gReservoir[0][index2Dto1D(dTid, gFrameDim.x)] = r;
     gCausticSample[0][index2Dto1D(dTid, gFrameDim.x)] = causticData;
 
     //Second Resample pass for directly collected photons on some metal surfaces
@@ -413,7 +404,7 @@ void main(uint2 dTid : SV_DispatchThreadID)
         causticData = CausticSample();
 
         //Load current reservoir 
-        current = Reservoir(gReservoir[1][dTid]);
+        current = gReservoir[1][index2Dto1D(dTid, gFrameDim.x)];
         if (current.M > 0)
         {
             causticData = gCausticSample[1][index2Dto1D(dTid, gFrameDim.x)];
@@ -429,11 +420,7 @@ void main(uint2 dTid : SV_DispatchThreadID)
 
     
             //Store reservoir and sample data    
-        #if USE_REDUCED_RESERVOIR_FORMAT
-            gReservoir[1][dTid] = r.packReduced();
-        #else
-            gReservoir[1][dTid] = r.pack();
-        #endif
+            gReservoir[1][index2Dto1D(dTid, gFrameDim.x)] = r;
             gCausticSample[1][index2Dto1D(dTid, gFrameDim.x)] = causticData;
     }
     
