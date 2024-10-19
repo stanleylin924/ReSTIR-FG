@@ -325,6 +325,7 @@ private:
     ref<Buffer> mpDirectFGReservoir[2];
     ref<Buffer> mpDirectFGSample[2];
     ref<Buffer> mpSampleGenState;       //SampleGeneratorState
+    ref<Buffer> mpAppendBuffer;         // Append Buffer for the photon collection
 
     ref<Texture> mpVBufferDI;          // Work copy for VBuffer (RTXDI or DirectAnalytical)
     ref<Texture> mpViewDirRayDistDI;   // View dir tex (RTXDI or DirectAnalytical)
