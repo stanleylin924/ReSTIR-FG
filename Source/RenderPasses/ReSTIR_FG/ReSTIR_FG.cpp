@@ -37,6 +37,7 @@ namespace
     const std::string kReSTIRGISampleShader = "RenderPasses/ReSTIR_FG/Shader/GenerateGIPathSamples.rt.slang";
     const std::string kGeneratePhotonsShader = "RenderPasses/ReSTIR_FG/Shader/GeneratePhotons.rt.slang";
     const std::string kCollectPhotonsShader = "RenderPasses/ReSTIR_FG/Shader/CollectPhotons.rt.slang";
+    const std::string kBuildHashGridShader = "RenderPasses/ReSTIR_FG/Shader/BuildHashGrid.cs.slang";
     const std::string kResamplingPassShader = "RenderPasses/ReSTIR_FG/Shader/ResamplingPass.cs.slang";
     const std::string kCausticResamplingPassShader = "RenderPasses/ReSTIR_FG/Shader/CausticResamplingPass.cs.slang";
     const std::string kFinalShadingPassShader = "RenderPasses/ReSTIR_FG/Shader/FinalShading.cs.slang";
@@ -335,6 +336,8 @@ void ReSTIR_FG::execute(RenderContext* pRenderContext, const RenderData& renderD
         generatePhotonsPass(pRenderContext, renderData);
         if (mMixedLights)
             generatePhotonsPass(pRenderContext, renderData, true); // Secound pass. Always Analytic
+
+        buildHashGridPass(pRenderContext, renderData);
     }
     
     //Direct light resampling
@@ -1701,6 +1704,44 @@ void ReSTIR_FG::collectPhotonsSplit(RenderContext* pRenderContext, const RenderD
      FALCOR_ASSERT(targetDim.x > 0 && targetDim.y > 0);
      // Trace the photons
      mpScene->raytrace(pRenderContext, mCollectPhotonPass.pProgram.get(), mCollectPhotonPass.pVars, uint3(targetDim, 1));
+}
+
+void ReSTIR_FG::buildHashGridPass(RenderContext* pRenderContext, const RenderData& renderData) {
+    FALCOR_PROFILE(pRenderContext, "BuildHashGrid");
+
+     // Create pass
+    if (!mpBuildHashGridPass)
+    {
+        Program::Desc desc;
+        desc.addShaderModules(mpScene->getShaderModules());
+        desc.addShaderLibrary(kBuildHashGridShader).csEntry("main").setShaderModel(kShaderModel);
+        desc.addTypeConformances(mpScene->getTypeConformances());
+
+        DefineList defines;
+        defines.add(mpScene->getSceneDefines());
+        defines.add(mpSampleGenerator->getDefines());
+        defines.add(getMaterialDefines());
+
+        mpBuildHashGridPass = ComputePass::create(mpDevice, desc, defines, true);
+    }
+    FALCOR_ASSERT(mpBuildHashGridPass);
+
+     // Set variables
+     auto var = mpBuildHashGridPass->getRootVar();
+
+     // Uniform
+     std::string uniformName = "PerFrame";
+     var[uniformName]["gFrameCount"] = mFrameCount;
+     var[uniformName]["gFrameDim"] = renderData.getDefaultTextureDims();
+
+     var["gAppendBuffer"] = mpAppendBuffer;
+     var["gCellStorageBuffer"] = mpCellStorageBuffer[(mFrameCount + 1) % 2];
+     var["gCellIndexBuffer"] = mpCellIndexBuffer[(mFrameCount + 1) % 2];
+
+     // Execute
+     const uint2 targetDim = renderData.getDefaultTextureDims();
+     FALCOR_ASSERT(targetDim.x > 0 && targetDim.y > 0);
+     mpBuildHashGridPass->execute(pRenderContext, uint3(targetDim, 1));
 }
 
 void ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const RenderData& renderData) {
