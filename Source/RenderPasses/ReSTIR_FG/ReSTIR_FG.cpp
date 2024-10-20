@@ -43,10 +43,10 @@ namespace
     const std::string kDirectAnalyticPassShader = "RenderPasses/ReSTIR_FG/Shader/DirectAnalytic.cs.slang";
 
     const std::string kShaderModel = "6_5";
-    const uint kMaxPayloadBytes = 96u;
-    const uint kMaxPayloadBytesCollect = 64u;
-    const uint kMaxPayloadBytesGenerateFGSamples = 20u;
-    const uint kMaxPayloadBytesGI = 32u;
+    const uint kMaxPayloadBytes = 160u;
+    const uint kMaxPayloadBytesCollect = 128u;
+    const uint kMaxPayloadBytesGenerateFGSamples = 96u;
+    const uint kMaxPayloadBytesGI = 96u;
 
     //Render Pass inputs and outputs
     const std::string kInputVBuffer = "vbuffer";
@@ -282,6 +282,7 @@ void ReSTIR_FG::execute(RenderContext* pRenderContext, const RenderData& renderD
     //Clear the reservoir
     if (mClearReservoir)
     {
+        // TODO: 需要使用別的方法來清除 Reservoir Buffers
         for (uint i = 0; i < 2; i++)
         {
             if (mpReservoirBuffer[i])
