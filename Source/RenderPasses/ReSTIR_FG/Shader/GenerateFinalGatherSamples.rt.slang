@@ -18,6 +18,7 @@ import FinalGatherData;
 import SurfaceDataFG;
 import Hash;
 import HashBuildStructure;
+import Params;
 
 cbuffer PerFrame
 {
@@ -25,7 +26,8 @@ cbuffer PerFrame
     float2 gCollectionRadius;
     float gHashScaleFactor; //Hash scale factor. 1/diameter
     float gAttenuationRadius;
-    uint3 _pad;
+    float3 gCameraPos;
+    //uint3 _pad;
 }
 
 cbuffer Constant{
@@ -33,6 +35,8 @@ cbuffer Constant{
     bool gUseAlphaTest; //Alpha test
     bool gDeltaRejection;   //Accept every non delta surface as diffuse
     uint _pad2;
+
+    GIParameter gParams;
 }  
 
 // Inputs
@@ -46,6 +50,8 @@ RWStructuredBuffer<PackedSurfaceDataFG> gSurfaceData;
 RWTexture2D<PackedHitInfo> gFinalGatherHit;
 RWTexture2D<uint> gPhotonCullingMask;
 RWStructuredBuffer<HashAppendData> gAppendBuffer;
+RWByteAddressBuffer gCellChecksumBuffer;
+RWByteAddressBuffer gCellCounterBuffer;
 
 //Outputs
 RWStructuredBuffer<Reservoir> gReservoir;
@@ -113,6 +119,27 @@ void photonCulling(float3 hitPos, float radius){
         uint h = hash(cells[i]) & (gHashSize - 1);    //calculateHash
         gPhotonCullingMask[ReSTIR_LinearIndexToZCurve(h)] = 1;
     }
+}
+
+HashAppendData buildHashAppendData(float3 pos, float3 norm, uint linearIdx)
+{
+    HashAppendData data = { };
+    data.isValid = 0;
+    data.reservoirIdx = linearIdx;
+    if (any(norm != 0))
+    {
+        float cellSize = calculateCellSize(pos, gCameraPos, gParams);
+        int cellIdx = findOrInsertCell(pos, norm, cellSize, gParams, gCellChecksumBuffer);
+        if (cellIdx != -1)
+        {
+            uint inCellIdx;
+            gCellCounterBuffer.InterlockedAdd(cellIdx, 1, inCellIdx);
+            data.isValid = 1;
+            data.cellIdx = cellIdx;
+            data.inCellIdx = inCellIdx;
+        }
+    }
+    return data;
 }
 
 [shader("miss")]
@@ -240,4 +267,7 @@ void rayGen()
     #endif //STORE_SAMPLE_GEN_STATE
 
     gReservoir[index2Dto1D(launchIndex, launchDim.x)] = reservoir;
+
+    HashAppendData data = buildHashAppendData(reservoir.vPos, reservoir.vNorm, index2Dto1D(launchIndex, launchDim.x));
+    gAppendBuffer[index2Dto1D(launchIndex, launchDim.x)] = data;
 }

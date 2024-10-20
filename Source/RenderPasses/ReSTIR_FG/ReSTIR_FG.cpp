@@ -157,6 +157,8 @@ ReSTIR_FG::ReSTIR_FG(ref<Device> pDevice, const Properties& props)
     mpSampleGenerator = SampleGenerator::create(mpDevice, SAMPLE_GENERATOR_UNIFORM);
 
     mpReflectTypes = ComputePass::create(mpDevice, kReflectTypesShader);
+
+    mParams.frameCount = 0;
 }
 
 void ReSTIR_FG::parseProperties(const Properties& props)
@@ -295,6 +297,16 @@ void ReSTIR_FG::execute(RenderContext* pRenderContext, const RenderData& renderD
             
         mClearReservoir = false;
     }
+
+    // World Space ReSTIR
+    mParams.frameDim = mScreenRes;
+    mParams.frameCount = mFrameCount;
+    mParams.fov = focalLengthToFovY(mpScene->getCamera()->getFocalLength(), Camera::kDefaultFrameHeight);
+    mParams.sceneBBMin = mpScene->getSceneBounds().minPoint - float3(0.1, 0.1, 0.1);
+    float3 boudingSize =
+        abs((mpScene->getSceneBounds().maxPoint - mpScene->getSceneBounds().minPoint) / static_cast<float>(mSceneGridDimension));
+    mParams._pad = float3(0);
+    mParams.minCellSize = std::max(boudingSize.x, std::max(boudingSize.y, boudingSize.z));
 
     if (mpRTXDI)
         mpRTXDI->beginFrame(pRenderContext, mScreenRes);
@@ -865,6 +877,10 @@ void ReSTIR_FG::prepareBuffers(RenderContext* pRenderContext, const RenderData& 
             mpCausticSample[i].reset();
             mpDirectFGReservoir[i].reset();
             mpDirectFGSample[i].reset();
+            mpCellStorageBuffer[i].reset();
+            mpCellIndexBuffer[i].reset();
+            mpCellChecksumBuffer[i].reset();
+            mpCellCounterBuffer[i].reset();
         }
         mpFinalGatherSampleHitData.reset();
         mpVBuffer.reset();
@@ -988,6 +1004,40 @@ void ReSTIR_FG::prepareBuffers(RenderContext* pRenderContext, const RenderData& 
             mpSurfaceBuffer[i] = Buffer::createStructured(mpDevice, sizeof(uint) * 6, mScreenRes.x * mScreenRes.y,ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess,
                                                           Buffer::CpuAccess::None, nullptr, false );
             mpSurfaceBuffer[i]->setName("ReSTIR_FG::SurfaceBuffer" + std::to_string(i));
+        }
+
+        if (!mpCellStorageBuffer[i])
+        {
+            mpCellStorageBuffer[i] = Buffer::createStructured(
+                mpDevice, mpReflectTypes->getRootVar()["gCellStorageBuffer"], mScreenRes.x * mScreenRes.y,
+                ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess, Buffer::CpuAccess::None, nullptr, false
+            );
+            mpCellStorageBuffer[i]->setName("ReSTIR_FG::CellStorageBuffer" + std::to_string(i));
+        }
+
+        if (!mpCellIndexBuffer[i])
+        {
+            mpCellIndexBuffer[i] = Buffer::create(
+                mpDevice, mHashBufferSize,
+                ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess, Buffer::CpuAccess::None
+            );
+            mpCellIndexBuffer[i]->setName("ReSTIR_FG::CellIndexBuffer" + std::to_string(i));
+        }
+
+        if (!mpCellChecksumBuffer[i])
+        {
+            mpCellChecksumBuffer[i] = Buffer::create(
+                mpDevice, mHashBufferSize, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess, Buffer::CpuAccess::None
+            );
+            mpCellChecksumBuffer[i]->setName("ReSTIR_FG::CellChecksumBuffer" + std::to_string(i));
+        }
+
+        if (!mpCellCounterBuffer[i])
+        {
+            mpCellCounterBuffer[i] = Buffer::create(
+                mpDevice, mHashBufferSize, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess, Buffer::CpuAccess::None
+            );
+            mpCellCounterBuffer[i]->setName("ReSTIR_FG::CellCounterBuffer" + std::to_string(i));
         }
     }
 
@@ -1339,11 +1389,13 @@ void ReSTIR_FG::getFinalGatherHitPass(RenderContext* pRenderContext, const Rende
     var[nameBuf]["gCollectionRadius"] = mPhotonCollectRadius;
     var[nameBuf]["gHashScaleFactor"] = 1.f / (2 * hashRad); // Hash Scale
     var[nameBuf]["gAttenuationRadius"] = mSampleRadiusAttenuation;
+    var[nameBuf]["gCameraPos"] = mpScene->getCamera()->getPosition();
 
     nameBuf = "Constant";
     var[nameBuf]["gHashSize"] = 1 << mCullingHashBufferSizeBits;
     var[nameBuf]["gUseAlphaTest"] = mPhotonUseAlphaTest;
     var[nameBuf]["gDeltaRejection"] = mGenerationDeltaRejection;
+    var[nameBuf]["gParams"].setBlob(mParams);
 
     var["gVBuffer"] = mpVBuffer;
     var["gView"] = mpViewDir;
@@ -1355,6 +1407,8 @@ void ReSTIR_FG::getFinalGatherHitPass(RenderContext* pRenderContext, const Rende
     var["gFinalGatherHit"] = mpFinalGatherSampleHitData;
     var["gPhotonCullingMask"] = mpPhotonCullingMask;
     var["gAppendBuffer"] = mpAppendBuffer;
+    var["gCellChecksumBuffer"] = mpCellChecksumBuffer[(mFrameCount + 1) % 2];
+    var["gCellCounterBuffer"] = mpCellCounterBuffer[(mFrameCount + 1) % 2];
 
     FALCOR_ASSERT(mScreenRes.x > 0 && mScreenRes.y > 0);
 

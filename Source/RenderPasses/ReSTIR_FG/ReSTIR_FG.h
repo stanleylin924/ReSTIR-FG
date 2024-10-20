@@ -37,6 +37,9 @@
 
 #include "Rendering/AccelerationStructure/CustomAccelerationStructure.h"
 
+#include "Utils/Math/FalcorMath.h"
+#include "Shader/Params.slang"
+
 using namespace Falcor;
 
 class ReSTIR_FG : public RenderPass
@@ -301,6 +304,12 @@ private:
     LightBVHSampler::Options mGILightBVHOptions;
    
 
+    // World Space ReSTIR
+    GIParameter mParams;
+    uint mSceneGridDimension = 80;
+    uint mHashCellCount = 3200000;
+    uint mHashBufferSize = mHashCellCount * sizeof(uint);
+
     //
     // Buffer and Textures
     //
@@ -326,6 +335,10 @@ private:
     ref<Buffer> mpDirectFGSample[2];
     ref<Buffer> mpSampleGenState;       //SampleGeneratorState
     ref<Buffer> mpAppendBuffer;         // Append Buffer for the photon collection
+    ref<Buffer> mpCellStorageBuffer[2]; // Storage Buffer for each cell
+    ref<Buffer> mpCellIndexBuffer[2];   // Index Buffer for each cell
+    ref<Buffer> mpCellChecksumBuffer[2];// Checksum Buffer for each cell
+    ref<Buffer> mpCellCounterBuffer[2]; // Counter Buffer for each cell
 
     ref<Texture> mpVBufferDI;          // Work copy for VBuffer (RTXDI or DirectAnalytical)
     ref<Texture> mpViewDirRayDistDI;   // View dir tex (RTXDI or DirectAnalytical)

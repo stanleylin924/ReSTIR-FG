@@ -6,6 +6,7 @@ StructuredBuffer<Reservoir> gCausticReservoir;
 StructuredBuffer<Reservoir> gDirectFGReservoir;
 
 StructuredBuffer<HashAppendData> gAppendBuffer;
+StructuredBuffer<uint> gCellStorageBuffer;
 
 void main()
 {
