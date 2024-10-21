@@ -729,6 +729,7 @@ void ReSTIR_FG::setScene(RenderContext* pRenderContext, const ref<Scene>& pScene
     mpCausticResamplingPass.reset();
     mpEmissiveLightSampler.reset();
     mpGIEmissiveLightSampler.reset();
+    mpPrefixSumPass.reset();
     mpRTXDI.reset();
     mClearReservoir = true;
     mResetTex = true;
@@ -1725,6 +1726,19 @@ void ReSTIR_FG::buildHashGridPass(RenderContext* pRenderContext, const RenderDat
         mpBuildHashGridPass = ComputePass::create(mpDevice, desc, defines, true);
     }
     FALCOR_ASSERT(mpBuildHashGridPass);
+
+    // Build cell index buffer
+    if (!mpPrefixSumPass)
+        mpPrefixSumPass = std::make_unique<PrefixSum>(mpDevice);
+
+    pRenderContext->copyBufferRegion(
+        mpCellIndexBuffer[(mFrameCount + 1) % 2].get(), 0, mpCellCounterBuffer[(mFrameCount + 1) % 2].get(), 0,
+        mpCellCounterBuffer[(mFrameCount + 1) % 2]->getSize()
+    );
+    mpPrefixSumPass->execute(
+        pRenderContext, mpCellIndexBuffer[(mFrameCount + 1) % 2], static_cast<uint>(mpCellIndexBuffer[(mFrameCount + 1) % 2]->getSize())
+    );
+    FALCOR_ASSERT(mpPrefixSumPass);
 
      // Set variables
      auto var = mpBuildHashGridPass->getRootVar();
