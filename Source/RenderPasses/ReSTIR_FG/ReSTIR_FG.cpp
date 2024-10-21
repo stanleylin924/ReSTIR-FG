@@ -724,6 +724,7 @@ void ReSTIR_FG::setScene(RenderContext* pRenderContext, const ref<Scene>& pScene
     mGeneratePhotonPass = RayTraceProgramHelper::create();
     mCollectPhotonPass = RayTraceProgramHelper::create();
     mTraceTransmissionDelta = RayTraceProgramHelper::create();
+    mpBuildHashGridPass.reset();
     mpFinalShadingPass.reset();
     mpResamplingPass.reset();
     mpCausticResamplingPass.reset();
