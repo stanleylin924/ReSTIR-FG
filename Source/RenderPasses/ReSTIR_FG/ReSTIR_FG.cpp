@@ -650,6 +650,8 @@ void ReSTIR_FG::renderUI(Gui::Widgets& widget)
             changed |= group.var("Jacobian Min/Max", mJacobianMinMax, 0.0f, 1000.f, 0.01f);
             group.tooltip("Min and Max values for the jacobian determinant. If smaller/higher the Reservoirs will not be combined");
 
+            changed |= group.checkbox("Use World Space Reservoir", mUseWorldSpaceReservoir);
+
             if (auto group2 = group.group("Temporal Options"))
             {
                 changed |= group2.var("Confidence Cap", mTemporalMaxAge, 0u, 512u);
@@ -1782,6 +1784,7 @@ void ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const RenderData& 
         defines.add("MODE_TEMPORAL", mResamplingMode == ResamplingMode::Temporal ? "1" : "0");
         defines.add("MODE_SPATIAL", mResamplingMode == ResamplingMode::Spatial ? "1" : "0");
         defines.add("BIAS_CORRECTION_MODE", std::to_string((uint)mBiasCorrectionMode));
+        defines.add("USE_WORLD_SPACE_RESERVOIR", mUseWorldSpaceReservoir ? "1" : "0");
         defines.add(getMaterialDefines());
 
         mpResamplingPass = ComputePass::create(mpDevice, desc, defines, true);
@@ -1794,6 +1797,7 @@ void ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const RenderData& 
      mpResamplingPass->getProgram()->addDefine("MODE_TEMPORAL", mResamplingMode == ResamplingMode::Temporal ? "1" : "0");
      mpResamplingPass->getProgram()->addDefine("MODE_SPATIAL", mResamplingMode == ResamplingMode::Spatial ? "1" : "0");
      mpResamplingPass->getProgram()->addDefine("BIAS_CORRECTION_MODE", std::to_string((uint)mBiasCorrectionMode));
+     mpResamplingPass->getProgram()->addDefine("USE_WORLD_SPACE_RESERVOIR", mUseWorldSpaceReservoir ? "1" : "0");
      mpResamplingPass->getProgram()->addDefines(getMaterialDefines());
      
     // Set variables
@@ -1818,6 +1822,10 @@ void ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const RenderData& 
      var["gFGSampleData"]       = mpFGSampelDataBuffer[idxCurr];
      var["gFGSampleDataPrev"]   = mpFGSampelDataBuffer[idxPrev];
     
+     var["gCellStorageBuffer"] = mpCellStorageBuffer[(mFrameCount + 0) % 2];
+     var["gCellIndexBuffer"] = mpCellIndexBuffer[(mFrameCount + 0) % 2];
+     var["gCellChecksumBuffer"] = mpCellChecksumBuffer[(mFrameCount + 0) % 2];
+     var["gCellCounterBuffer"] = mpCellCounterBuffer[(mFrameCount + 0) % 2];
 
      //View
      var["gView"] = mpViewDir;
@@ -1827,6 +1835,7 @@ void ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const RenderData& 
 
      std::string uniformName = "PerFrame";
      var[uniformName]["gFrameCount"] = mFrameCount;
+     var[uniformName]["gCameraPos"] = mpScene->getCamera()->getPosition();
 
      uniformName = "Constant";
      var[uniformName]["gFrameDim"] = renderData.getDefaultTextureDims();
@@ -1838,6 +1847,7 @@ void ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const RenderData& 
      var[uniformName]["gDisocclusionBoostSamples"] = mDisocclusionBoostSamples;
      var[uniformName]["gAttenuationRadius"] = mSampleRadiusAttenuation;
      var[uniformName]["gJacobianMinMax"] = mJacobianMinMax;
+     var[uniformName]["gParams"].setBlob(mParams);
 
      // Execute
      const uint2 targetDim = renderData.getDefaultTextureDims();
