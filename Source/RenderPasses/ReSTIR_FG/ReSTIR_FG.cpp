@@ -282,6 +282,11 @@ void ReSTIR_FG::execute(RenderContext* pRenderContext, const RenderData& renderD
 
     prepareAccelerationStructure();
 
+    // Clear Hash Grid Buffers
+    pRenderContext->clearUAV(mpCellChecksumBuffer[(mFrameCount + 1) % 2]->getUAV().get(), uint4(0));
+    pRenderContext->clearUAV(mpCellCounterBuffer[(mFrameCount + 1) % 2]->getUAV().get(), uint4(0));
+    pRenderContext->clearUAV(mpCellIndexBuffer[(mFrameCount + 1) % 2]->getUAV().get(), uint4(0));
+
     //Clear the reservoir
     if (mClearReservoir)
     {
