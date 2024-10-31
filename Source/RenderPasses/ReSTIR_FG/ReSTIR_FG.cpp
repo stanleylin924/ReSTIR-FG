@@ -157,6 +157,7 @@ ReSTIR_FG::ReSTIR_FG(ref<Device> pDevice, const Properties& props)
     // Create sample generator.
     mpSampleGenerator = SampleGenerator::create(mpDevice, SAMPLE_GENERATOR_UNIFORM);
 
+    mpPixelDebug = std::make_unique<PixelDebug>(mpDevice);
     mpReflectTypes = ComputePass::create(mpDevice, kReflectTypesShader);
 
     mParams.frameCount = 0;
@@ -314,6 +315,8 @@ void ReSTIR_FG::execute(RenderContext* pRenderContext, const RenderData& renderD
     mParams._pad = float3(0);
     mParams.minCellSize = std::max(boudingSize.x, std::max(boudingSize.y, boudingSize.z));
 
+    mpPixelDebug->beginFrame(pRenderContext, mParams.frameDim);
+
     if (mpRTXDI)
         mpRTXDI->beginFrame(pRenderContext, mScreenRes);
 
@@ -369,6 +372,8 @@ void ReSTIR_FG::execute(RenderContext* pRenderContext, const RenderData& renderD
     //Add Direct Light at the end if this mode is enabled
     if (mDirectLightMode == DirectLightingMode::AnalyticDirect)
         directAnalytic(pRenderContext, renderData);
+
+    mpPixelDebug->endFrame(pRenderContext);
 
     //SPPM
     if (mUseSPPM)
@@ -719,6 +724,19 @@ void ReSTIR_FG::renderUI(Gui::Widgets& widget)
         changed |= group.checkbox("Use Stored Sample Gen State", mStoreSampleGenState);
         group.tooltip("Stores the Sample generator state and uses them for the next pass instead of generating a new one");
     }
+    if (auto group = widget.group("Debugging", false))
+    {
+        changed |= group.checkbox("Use fixed seed", mUseFixedSeed);
+        group.tooltip(
+            "Forces a fixed random seed for each frame.\n\n"
+            "This should produce exactly the same image each frame, which can be useful for debugging."
+        );
+        if (mUseFixedSeed)
+        {
+            changed |= group.var("Seed", mFixedSeed);
+        }
+        mpPixelDebug->renderUI(group);
+    }
 
     mOptionsChanged |= changed;
 }
@@ -775,6 +793,10 @@ void ReSTIR_FG::setScene(RenderContext* pRenderContext, const ref<Scene>& pScene
     }
 }
 
+bool ReSTIR_FG::onMouseEvent(const MouseEvent& mouseEvent)
+{
+    return mpPixelDebug->onMouseEvent(mouseEvent);
+}
 
 
 bool ReSTIR_FG::prepareLighting(RenderContext* pRenderContext)
@@ -1423,6 +1445,8 @@ void ReSTIR_FG::getFinalGatherHitPass(RenderContext* pRenderContext, const Rende
     var["gCellCounterBuffer"] = mpCellCounterBuffer[(mFrameCount + 1) % 2];
 
     FALCOR_ASSERT(mScreenRes.x > 0 && mScreenRes.y > 0);
+
+    mpPixelDebug->prepareProgram(mFinalGatherSamplePass.pProgram, var);
 
     // Trace the photons
     mpScene->raytrace(pRenderContext, mFinalGatherSamplePass.pProgram.get(), mFinalGatherSamplePass.pVars, uint3(mScreenRes, 1));
