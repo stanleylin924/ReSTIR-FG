@@ -10,6 +10,7 @@ import Utils.Sampling.SampleGenerator;
 import Scene.Material.ShadingUtils;
 import Rendering.Lights.LightHelpers;
 import Utils.Color.ColorHelpers;
+import Utils.Debug.PixelDebug;
 import Rendering.Materials.Microfacet;
 import Rendering.Lights.EmissiveLightSampler;
 import Rendering.Lights.EmissiveLightSamplerHelpers;
@@ -315,6 +316,8 @@ void rayGen()
 {
     uint2 launchIndex = DispatchRaysIndex().xy;
     uint2 launchDim = DispatchRaysDimensions().xy;
+
+    printSetPixel(launchIndex);
 
     const float invRejection = 1.f/gRejection;
     const float invInvRejection = 1.f/(1.f-gRejection);

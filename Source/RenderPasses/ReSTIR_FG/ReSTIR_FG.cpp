@@ -1348,6 +1348,7 @@ void ReSTIR_FG::traceTransmissiveDelta(RenderContext* pRenderContext, const Rend
     FALCOR_ASSERT(mScreenRes.x > 0 && mScreenRes.y > 0);
 
     // Trace the photons
+    mpPixelDebug->prepareProgram(mTraceTransmissionDelta.pProgram, var);
     mpScene->raytrace(pRenderContext, mTraceTransmissionDelta.pProgram.get(), mTraceTransmissionDelta.pVars, uint3(mScreenRes, 1));
 }
 
@@ -1394,6 +1395,7 @@ void ReSTIR_FG::generateReSTIRGISamples(RenderContext* pRenderContext, const Ren
     var["gSampleGenState"] = mpSampleGenState;
 
     FALCOR_ASSERT(mScreenRes.x > 0 && mScreenRes.y > 0);
+    mpPixelDebug->prepareProgram(mReSTIRGISamplePass.pProgram, var);
     mpScene->raytrace(pRenderContext, mReSTIRGISamplePass.pProgram.get(), mReSTIRGISamplePass.pVars, uint3(mScreenRes, 1));
 }
 
@@ -1446,9 +1448,8 @@ void ReSTIR_FG::getFinalGatherHitPass(RenderContext* pRenderContext, const Rende
 
     FALCOR_ASSERT(mScreenRes.x > 0 && mScreenRes.y > 0);
 
-    mpPixelDebug->prepareProgram(mFinalGatherSamplePass.pProgram, var);
-
     // Trace the photons
+    mpPixelDebug->prepareProgram(mFinalGatherSamplePass.pProgram, var);
     mpScene->raytrace(pRenderContext, mFinalGatherSamplePass.pProgram.get(), mFinalGatherSamplePass.pVars, uint3(mScreenRes, 1));
 
     if (mpPhotonCullingMask)
@@ -1550,7 +1551,10 @@ void ReSTIR_FG::generatePhotonsPass(RenderContext* pRenderContext, const RenderD
 
      // Trace the photons
      if (traceScene)
-        mpScene->raytrace(pRenderContext, mGeneratePhotonPass.pProgram.get(), mGeneratePhotonPass.pVars, uint3(targetDim, 1));
+     {
+         mpPixelDebug->prepareProgram(mGeneratePhotonPass.pProgram, var);
+         mpScene->raytrace(pRenderContext, mGeneratePhotonPass.pProgram.get(), mGeneratePhotonPass.pVars, uint3(targetDim, 1));
+     }
 
      pRenderContext->uavBarrier(mpPhotonCounter[mFrameCount % kPhotonCounterCount].get());
      pRenderContext->uavBarrier(mpPhotonAABB[0].get());
@@ -1712,6 +1716,7 @@ void ReSTIR_FG::collectPhotons(RenderContext* pRenderContext, const RenderData& 
         FALCOR_ASSERT(targetDim.x > 0 && targetDim.y > 0);
 
         // Trace the photons
+        mpPixelDebug->prepareProgram(mCollectPhotonPass.pProgram, var);
         mpScene->raytrace(pRenderContext, mCollectPhotonPass.pProgram.get(), mCollectPhotonPass.pVars, uint3(targetDim, 1));
      }
         
@@ -1736,6 +1741,7 @@ void ReSTIR_FG::collectPhotonsSplit(RenderContext* pRenderContext, const RenderD
      uint2 targetDim = renderData.getDefaultTextureDims();
      FALCOR_ASSERT(targetDim.x > 0 && targetDim.y > 0);
      // Trace the photons
+     mpPixelDebug->prepareProgram(mCollectPhotonPass.pProgram, var);
      mpScene->raytrace(pRenderContext, mCollectPhotonPass.pProgram.get(), mCollectPhotonPass.pVars, uint3(targetDim, 1));
 }
 
@@ -1787,6 +1793,7 @@ void ReSTIR_FG::buildHashGridPass(RenderContext* pRenderContext, const RenderDat
      // Execute
      const uint2 targetDim = renderData.getDefaultTextureDims();
      FALCOR_ASSERT(targetDim.x > 0 && targetDim.y > 0);
+     mpPixelDebug->prepareProgram(mpBuildHashGridPass->getProgram(), var);
      mpBuildHashGridPass->execute(pRenderContext, uint3(targetDim, 1));
 }
 
@@ -1881,6 +1888,7 @@ void ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const RenderData& 
      // Execute
      const uint2 targetDim = renderData.getDefaultTextureDims();
      FALCOR_ASSERT(targetDim.x > 0 && targetDim.y > 0);
+     mpPixelDebug->prepareProgram(mpResamplingPass->getProgram(), var);
      mpResamplingPass->execute(pRenderContext, uint3(targetDim, 1));
 
      // Barrier for written buffer
@@ -1976,6 +1984,7 @@ void ReSTIR_FG::causticResamplingPass(RenderContext* pRenderContext, const Rende
      // Execute
      const uint2 targetDim = renderData.getDefaultTextureDims();
      FALCOR_ASSERT(targetDim.x > 0 && targetDim.y > 0);
+     mpPixelDebug->prepareProgram(mpCausticResamplingPass->getProgram(), var);
      mpCausticResamplingPass->execute(pRenderContext, uint3(targetDim, 1));
 
      // Barrier for written buffer
@@ -2087,6 +2096,7 @@ void ReSTIR_FG::finalShadingPass(RenderContext* pRenderContext, const RenderData
      // Execute
      const uint2 targetDim = renderData.getDefaultTextureDims();
      FALCOR_ASSERT(targetDim.x > 0 && targetDim.y > 0);
+     mpPixelDebug->prepareProgram(mpFinalShadingPass->getProgram(), var);
      mpFinalShadingPass->execute(pRenderContext, uint3(targetDim, 1));
 }
 
@@ -2140,6 +2150,7 @@ void ReSTIR_FG::directAnalytic(RenderContext* pRenderContext, const RenderData& 
      // Execute
      const uint2 targetDim = renderData.getDefaultTextureDims();
      FALCOR_ASSERT(targetDim.x > 0 && targetDim.y > 0);
+     mpPixelDebug->prepareProgram(mpDirectAnalyticPass->getProgram(), var);
      mpDirectAnalyticPass->execute(pRenderContext, uint3(targetDim, 1));
 }
 

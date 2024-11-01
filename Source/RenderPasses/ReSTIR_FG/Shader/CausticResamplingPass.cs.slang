@@ -10,6 +10,7 @@ import Utils.Sampling.SampleGenerator;
 import Utils.Geometry.GeometryHelpers;
 import Utils.Math.MathHelpers;
 import Utils.Color.ColorHelpers;
+import Utils.Debug.PixelDebug;
 
 import Reservoir;
 import SurfaceDataFG;
@@ -358,6 +359,8 @@ void spatiotemporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reser
 [numthreads(16, 16, 1)]
 void main(uint2 dTid : SV_DispatchThreadID)
 {    
+    printSetPixel(dTid);
+
     //Check if surface is valid
     float4 viewDir = gView[dTid];
     SurfaceFG surface = SurfaceFG(gSurface[index2Dto1D(dTid, gFrameDim.x)],viewDir.xyz);

@@ -9,6 +9,7 @@ import Utils.Sampling.SampleGenerator;
 import Rendering.Materials.IsotropicGGX;
 import Utils.Math.MathHelpers;
 import Utils.Color.ColorHelpers;
+import Utils.Debug.PixelDebug;
 import Rendering.RTXDI.RTXDI;
 
 import Reservoir;
@@ -104,6 +105,8 @@ void getEmissiveLight(uint idx,in float3 worldPos, out float distance ,out float
 [numthreads(16, 16, 1)]
 void main(uint2 pixel : SV_DispatchThreadID)
 {
+    printSetPixel(pixel);
+
     bool valid = true;
     //Load Reflectance (was set before)
     float4 diffuseReflectance = { };

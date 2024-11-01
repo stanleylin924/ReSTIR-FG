@@ -12,6 +12,7 @@ import Rendering.Lights.LightHelpers;
 import Utils.Math.PackedFormats;
 import Utils.Math.FormatConversion;
 import Utils.Color.ColorHelpers;
+import Utils.Debug.PixelDebug;
 
 import Reservoir;
 import FinalGatherData;
@@ -182,6 +183,8 @@ void rayGen()
     uint2 launchIndex = DispatchRaysIndex().xy;
     uint2 launchDim = DispatchRaysDimensions().xy;
     
+    printSetPixel(launchIndex);
+
     HitInfo hitInfo = HitInfo(gVBuffer[launchIndex]);
     SurfaceFG surface = SurfaceFG();
     Reservoir reservoir = Reservoir();
