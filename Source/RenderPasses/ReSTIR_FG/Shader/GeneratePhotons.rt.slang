@@ -22,6 +22,8 @@ cbuffer PerFrame
     uint gFrameCount; // Frame count since scene was loaded.
     float2 gPhotonRadius; //Radius for the vpl collection
     float gHashScaleFactor; //Hash scale factor. 1/Radius
+    bool gUseFixedSeed;     //Debugging - Use a fixed seed for the sample generator
+    uint gFixedSeed;        //Debugging - Fixed seed value
 }
 
 cbuffer CB
@@ -321,7 +323,7 @@ void rayGen()
 
     const float invRejection = 1.f/gRejection;
     const float invInvRejection = 1.f/(1.f-gRejection);
-    SampleGenerator lightSg = SampleGenerator(launchIndex, gFrameCount + 11 * 32); //Sample Generator for the light sample
+    SampleGenerator lightSg = SampleGenerator(launchIndex, gUseFixedSeed ? gFixedSeed : gFrameCount + 11 * 32); //Sample Generator for the light sample
 
     RayDesc ray;
     PhotonLightSample pls;
@@ -356,7 +358,7 @@ void rayGen()
 
     // Prepare ray payload.
     RayData rayData = RayData.create();
-    rayData.sg = SampleGenerator(launchIndex, gFrameCount + 1 * 32 );
+    rayData.sg = SampleGenerator(launchIndex, gUseFixedSeed ? gFixedSeed : gFrameCount + 1 * 32 );
 
     ray.Origin = pls.posW;
     ray.TMin = 0.0f;

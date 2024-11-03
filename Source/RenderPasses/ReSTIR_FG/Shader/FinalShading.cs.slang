@@ -67,6 +67,8 @@ cbuffer PerFrame
     uint gFrameCount;                   //Current it for sample gen
     float gAttenuationRadius;           //Current global photon radius
     uint2 gFrameDim; //Frame Dimensions for camera dir
+    bool gUseFixedSeed;                 //Debugging - Use a fixed seed for the sample generator
+    uint gFixedSeed;                    //Debugging - Fixed seed value
 }
 
 static const float kRayEpsilon = 0.98f;
@@ -138,7 +140,7 @@ void main(uint2 pixel : SV_DispatchThreadID)
     #if STORE_SAMPLE_GEN_STATE
         SampleGenerator sg = gSampleGenState[index2Dto1D(pixel, gFrameDim.x)];
     #else
-        SampleGenerator sg = SampleGenerator(pixel, gFrameCount + 9 * 32);
+        SampleGenerator sg = SampleGenerator(pixel, gUseFixedSeed ? gFixedSeed : gFrameCount + 9 * 32);
     #endif
     let lod = ExplicitLodTextureSampler(0.f);
     

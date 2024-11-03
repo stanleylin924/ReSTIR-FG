@@ -33,6 +33,8 @@ RWStructuredBuffer<SampleGenerator> gSampleGenState;
 cbuffer PerFrame
 {
     uint gFrameCount;                   //Current it for sample gen
+    bool gUseFixedSeed;                 //Debugging - Use a fixed seed for the sample generator
+    uint gFixedSeed;                    //Debugging - Fixed seed value
 }
 
 cbuffer Constant
@@ -372,7 +374,7 @@ void main(uint2 dTid : SV_DispatchThreadID)
     #if STORE_SAMPLE_GEN_STATE
         SampleGenerator sg = gSampleGenState[index2Dto1D(dTid, gFrameDim.x)];
     #else
-        SampleGenerator sg = SampleGenerator(dTid, gFrameCount + 8 * 32);
+        SampleGenerator sg = SampleGenerator(dTid, gUseFixedSeed ? gFixedSeed : gFrameCount + 8 * 32);
     #endif
 
     //Load reservoir from current iteration

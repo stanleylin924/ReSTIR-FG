@@ -43,6 +43,8 @@ cbuffer PerFrame
     float2 gPhotonRadius; // x->Global Radius, y-> Caustic Radius
     bool gCollectCaustic;   //Collect flag for caustic photons
     bool gCollectFG;        //Collect flag for final gather sample
+    bool gUseFixedSeed;       //Debugging - Use a fixed seed for the sample generator
+    uint gFixedSeed;          //Debugging - Fixed seed value
 }
 
 //Constant settings for the temporal filter. Can be null
@@ -646,7 +648,7 @@ void rayGen()
     #if STORE_SAMPLE_GEN_STATE
         rayData.sg = gSampleGenState[index2Dto1D(launchIndex, launchDim.x)];
     #else
-        rayData.sg = SampleGenerator(launchIndex, gFrameCount + 15 * 32);
+        rayData.sg = SampleGenerator(launchIndex, gUseFixedSeed ? gFixedSeed : gFrameCount + 15 * 32);
     #endif
 
     PackedHitInfo packedHit = gVBuffer[launchIndex];

@@ -1322,6 +1322,8 @@ void ReSTIR_FG::traceTransmissiveDelta(RenderContext* pRenderContext, const Rend
     var[nameBuf]["gFrameCount"] = mFrameCount;
     var[nameBuf]["gMaxBounces"] = mTraceMaxBounces;
     var[nameBuf]["gRequDiffParts"] = mTraceRequireDiffuseMat;
+    var[nameBuf]["gUseFixedSeed"] = mUseFixedSeed;
+    var[nameBuf]["gFixedSeed"] = mFixedSeed;
 
     if (mpRTXDI) mpRTXDI->setShaderData(var);
     var["gInVBuffer"] = renderData[kInputVBuffer]->asTexture();
@@ -1378,6 +1380,8 @@ void ReSTIR_FG::generateReSTIRGISamples(RenderContext* pRenderContext, const Ren
     var[nameBuf]["gFrameCount"] = mFrameCount;
     var[nameBuf]["gAttenuationRadius"] = mSampleRadiusAttenuation;
     var[nameBuf]["gBounces"] = mGIMaxBounces;
+    var[nameBuf]["gUseFixedSeed"] = mUseFixedSeed;
+    var[nameBuf]["gFixedSeed"] = mFixedSeed;
 
     if (mpRTXDI)
         mpRTXDI->setShaderData(var);
@@ -1426,6 +1430,8 @@ void ReSTIR_FG::getFinalGatherHitPass(RenderContext* pRenderContext, const Rende
     var[nameBuf]["gHashScaleFactor"] = 1.f / (2 * hashRad); // Hash Scale
     var[nameBuf]["gAttenuationRadius"] = mSampleRadiusAttenuation;
     var[nameBuf]["gCameraPos"] = mpScene->getCamera()->getPosition();
+    var[nameBuf]["gUseFixedSeed"] = mUseFixedSeed;
+    var[nameBuf]["gFixedSeed"] = mFixedSeed;
 
     nameBuf = "Constant";
     var[nameBuf]["gHashSize"] = 1 << mCullingHashBufferSizeBits;
@@ -1521,6 +1527,8 @@ void ReSTIR_FG::generatePhotonsPass(RenderContext* pRenderContext, const RenderD
     var[nameBuf]["gFrameCount"] = mFrameCount;
     var[nameBuf]["gPhotonRadius"] = mPhotonCollectRadius;
     var[nameBuf]["gHashScaleFactor"] = 1.f / (2 * hashRad); // Hash scale factor. 1/diameter.
+    var[nameBuf]["gUseFixedSeed"] = mUseFixedSeed;
+    var[nameBuf]["gFixedSeed"] = mFixedSeed;
 
     // Fill flags
     uint flags = 0;
@@ -1647,6 +1655,8 @@ void ReSTIR_FG::collectPhotons(RenderContext* pRenderContext, const RenderData& 
      var[nameBuf]["gAttenuationRadius"] = mSampleRadiusAttenuation;
      var[nameBuf]["gCollectCaustic"] = true;
      var[nameBuf]["gCollectFG"] = true;
+     var[nameBuf]["gUseFixedSeed"] = mUseFixedSeed;
+     var[nameBuf]["gFixedSeed"] = mFixedSeed;
      //Set Temporal Constant Buffer if necessary
      if (mCausticCollectMode == CausticCollectionMode::Temporal)
      {
@@ -1970,6 +1980,8 @@ void ReSTIR_FG::causticResamplingPass(RenderContext* pRenderContext, const Rende
 
      std::string uniformName = "PerFrame";
      var[uniformName]["gFrameCount"] = mFrameCount;
+     var[uniformName]["gUseFixedSeed"] = mUseFixedSeed;
+     var[uniformName]["gFixedSeed"] = mFixedSeed;
 
      uniformName = "Constant";
      var[uniformName]["gFrameDim"] = renderData.getDefaultTextureDims();
@@ -2092,6 +2104,8 @@ void ReSTIR_FG::finalShadingPass(RenderContext* pRenderContext, const RenderData
      var[uniformName]["gAttenuationRadius"] = mSampleRadiusAttenuation; // Attenuation radius
      var[uniformName]["gFrameDim"] = renderData.getDefaultTextureDims();
      //var[uniformName]["gEnableCaustics"] = mEnableCausticPhotonCollection;
+     var[uniformName]["gUseFixedSeed"] = mUseFixedSeed;
+     var[uniformName]["gFixedSeed"] = mFixedSeed;
 
      // Execute
      const uint2 targetDim = renderData.getDefaultTextureDims();
@@ -2146,6 +2160,8 @@ void ReSTIR_FG::directAnalytic(RenderContext* pRenderContext, const RenderData& 
      // Uniform
      std::string uniformName = "PerFrame";
      var[uniformName]["gFrameCount"] = mFrameCount;
+     var[uniformName]["gUseFixedSeed"] = mUseFixedSeed;
+     var[uniformName]["gFixedSeed"] = mFixedSeed;
 
      // Execute
      const uint2 targetDim = renderData.getDefaultTextureDims();
