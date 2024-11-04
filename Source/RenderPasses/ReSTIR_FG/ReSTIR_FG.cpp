@@ -670,7 +670,7 @@ void ReSTIR_FG::renderUI(Gui::Widgets& widget)
 
             if (auto group2 = group.group("Spatial Options"))
             {
-                changed |= group2.var("Spatial Samples", mspatialSamples, 0u, 8u);
+                changed |= group2.var("Spatial Samples", mspatialSamples, 1u, 8u);
                 group2.tooltip("Number of spatial samples");
 
                 changed |= group2.var("Disocclusion Sample Boost", mDisocclusionBoostSamples, 0u, 8u);

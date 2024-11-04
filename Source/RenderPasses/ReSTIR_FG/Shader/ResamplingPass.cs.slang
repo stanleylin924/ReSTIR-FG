@@ -240,7 +240,7 @@ void temporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reservoir r
 
 void spatialResampling(uint2 pixel, inout SampleGenerator sg, inout Reservoir r, inout FGData fgSample, in SurfaceFG surface)
 {    
-    uint numSamples = clamp(gSpatialSamples + 1, 1, 8); //Cap at 8 samples for the later bias correction
+    uint numSamples = clamp(gSpatialSamples, 1, 8); //Cap at 8 samples for the later bias correction
     uint cachedIndices[8]; //Store all indeces. 32 Bits per 2D index (16 per element)
     uint cachedM[4];
     int selectedSample = -1; //Index of the selected sample
