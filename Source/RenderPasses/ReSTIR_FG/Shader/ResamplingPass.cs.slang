@@ -256,21 +256,17 @@ void spatialResampling(uint2 pixel, inout SampleGenerator sg, inout Reservoir r,
     uint cellBaseIdx = gCellIndexBuffer.Load(cellIdx);
     uint sampleCount = gCellCounterBuffer.Load(cellIdx);
 
-    //uint maxSpatialIteration = 3u; //spatialReservoir.M > 10 ? 3u : 10u;
+    numSamples = clamp(numSamples, 1, sampleCount);
+    uint increment = (sampleCount + numSamples - 1) / numSamples;
+    uint offset = round(sampleNext1D(sg) * (increment - 1));
 
-    //uint increment = (sampleCount + maxSpatialIteration - 1) / maxSpatialIteration;
-    //uint offset = round(sampleNext1D(sg) * (increment - 1));
-    uint offset = 0;
-
-    numSamples = clamp(sampleCount, 0, 8);
-    //for (uint i = 0; i < sampleCount; i+= increment)
     for (uint i = 0; i < numSamples; i++)
     {
         cachedIndices[i] = 0xFFFFFFFF; //Set to max int
         if (i % 2 == 0)
             cachedM[i / 2] = 0;
 
-        uint neighborPixelIndex = gCellStorageBuffer[cellBaseIdx + (offset + i)%sampleCount];
+        uint neighborPixelIndex = gCellStorageBuffer[cellBaseIdx + (offset + i * increment) % sampleCount];
         Reservoir sampledReservoir = gReservoirPrev[neighborPixelIndex];    //Current reservoir is stored in prev
 
         bool sampleValid = true;
