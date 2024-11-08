@@ -483,10 +483,81 @@ void spatiotemporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reser
     numSamples = clamp(numSamples, 1, 8); //Cap at 8 samples for the later bias correction
     uint cachedIndices[8]; //Store all indeces. 32 Bits per 2D index (16 per element)
     uint cachedM[4];
-    
     int selectedSample = -1;
-    bool validSample = true;
 
+    #if USE_WORLD_SPACE_RESERVOIR
+    float cellSize = calculateCellSize(surface.posW, gCameraPos, gParams);
+    float3 jitteredPos = surface.posW + (sampleNext3D(sg) * 2.0f - 1.0f) * 0.1f * cellSize;
+    int cellIdx = findCell(jitteredPos, surface.normal, cellSize, gParams, gCellChecksumBuffer);
+    if (cellIdx == -1)
+    {
+        temporalResampling(pixel, sg, r, fgSample, surface);
+        return;
+    }
+    uint cellBaseIdx = gCellIndexBuffer.Load(cellIdx);
+    uint sampleCount = gCellCounterBuffer.Load(cellIdx);
+
+    numSamples = clamp(numSamples, 1, foundTemporalSurface ? sampleCount + 1 : sampleCount);
+    uint increment = (sampleCount + numSamples - 1) / numSamples;
+    uint offset = round(sampleNext1D(sg) * (increment - 1));
+
+    for (uint i = 0; i < numSamples; i++)
+    {
+        cachedIndices[i] = 0xFFFFFFFF; //Set to max int
+        if (i % 2 == 0)
+            cachedM[i / 2] = 0;
+        uint neighborPixelIndex = 0;
+
+        //Take temporal sample or generate a new neighbor sample
+        if (i == 0 && foundTemporalSurface)
+        {
+            neighborPixelIndex = index2Dto1D(prevIdx + temporalOffset, gFrameDim.x);
+        }
+        else
+        {
+            neighborPixelIndex = gCellStorageBuffer[cellBaseIdx + (offset + i * increment) % sampleCount];
+        }
+
+        Reservoir sampledReservoir = gReservoirPrev[neighborPixelIndex];
+        sampledReservoir.M = min(sampledReservoir.M, historyLimit);
+
+        FGData fgPrev = gFGSampleDataPrev[neighborPixelIndex];
+
+        //Kill the reservoir if it is not valid
+        bool sampleValid = true;
+        if (!fgPrev.valid)
+        {
+            sampledReservoir.weightSum = 0;
+            sampledReservoir.M = 0;
+            sampleValid = false;
+        }
+
+        //Store indices
+        uint2 idx = index1Dto2D(neighborPixelIndex, gFrameDim.x);
+        cachedIndices[i] = (idx.x & 0xFFFF) << 16 | (idx.y & 0xFFFF);
+        uint M = 0xFFFF & sampledReservoir.M;
+        if (i % 2 != 0)
+            M = M << 16;
+        cachedM[i / 2] |= M;
+
+        //Get neightbor light target PDF for current surface
+        float sampletargetFunc = 0.f;
+        if (sampledReservoir.M > 0 && sampleValid)
+        {
+            LightSample ls = { };
+            float dis;
+            if (!getLightSample(fgPrev, surface.posW, ls, dis))
+                continue;
+            sampletargetFunc = surface.getPdf(ls.dir, ls.Li);
+        }
+        //Combine Reservoirs
+        if (r.combineReservoir(sampledReservoir, sampletargetFunc, sampleNext1D(sg)))
+        {
+            selectedSample = i;
+            fgSample = fgPrev;
+        }
+    }
+    #else
     //Go through all neighbors
     for (uint i = 0; i < numSamples; i++)
     {
@@ -559,6 +630,7 @@ void spatiotemporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reser
             fgSample = fgPrev;
         }
     }
+    #endif
 
   //Bias correction
     #if BIAS_CORRECTION_MODE >= BIAS_MODE_BASIC
