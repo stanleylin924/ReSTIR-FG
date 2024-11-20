@@ -1868,10 +1868,10 @@ void ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const RenderData& 
      var["gFGSampleData"]       = mpFGSampelDataBuffer[idxCurr];
      var["gFGSampleDataPrev"]   = mpFGSampelDataBuffer[idxPrev];
     
-     var["gCellStorageBuffer"] = mpCellStorageBuffer[(mFrameCount + 0) % 2];
-     var["gCellIndexBuffer"] = mpCellIndexBuffer[(mFrameCount + 0) % 2];
-     var["gCellChecksumBuffer"] = mpCellChecksumBuffer[(mFrameCount + 0) % 2];
-     var["gCellCounterBuffer"] = mpCellCounterBuffer[(mFrameCount + 0) % 2];
+     var["gCellStorageBuffer"] = mpCellStorageBuffer[(mFrameCount + 1) % 2];
+     var["gCellIndexBuffer"] = mpCellIndexBuffer[(mFrameCount + 1) % 2];
+     var["gCellChecksumBuffer"] = mpCellChecksumBuffer[(mFrameCount + 1) % 2];
+     var["gCellCounterBuffer"] = mpCellCounterBuffer[(mFrameCount + 1) % 2];
 
      //View
      var["gView"] = mpViewDir;
