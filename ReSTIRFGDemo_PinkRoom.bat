@@ -1,0 +1,1 @@
+build\windows-vs2022\bin\Release\Mogwai.exe --script=Models\ReSTIR_FG_PinkRoom.py

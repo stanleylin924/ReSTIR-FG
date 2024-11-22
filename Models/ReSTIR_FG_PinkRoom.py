@@ -23,7 +23,7 @@ def render_graph_ReSTIR_FG():
 m.addGraph(render_graph_ReSTIR_FG())
 
 # Scene
-m.loadScene('D:/3D_Scene/ReSTIR-FG/VeachAjar/VeachAjar_v1.1.pyscene')
+m.loadScene('D:/3D_Scene/Others/pink_room/pink_room_v1.1.pyscene')
 m.scene.cameraSpeed = 1.0
 
 # Window Configuration
