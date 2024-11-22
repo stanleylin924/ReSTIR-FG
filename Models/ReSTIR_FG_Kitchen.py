@@ -1,6 +1,11 @@
 # Graphs
 from pathlib import WindowsPath, PosixPath
 from falcor import *
+import sys
+
+# Add the path of the helper script file to the system path
+sys.path.append('D:/3D_Scene/script')
+import framecapture
 
 def render_graph_ReSTIR_FG():
     g = RenderGraph('ReSTIR_FG')
@@ -18,12 +23,12 @@ def render_graph_ReSTIR_FG():
 m.addGraph(render_graph_ReSTIR_FG())
 
 # Scene
-m.loadScene('Kitchen_ReSTIRFG/KitchenReSTIRFG.pyscene')
+m.loadScene('D:/3D_Scene/ReSTIR-FG/Kitchen_ReSTIRFG/KitchenReSTIRFG_v1.1.pyscene')
 m.scene.renderSettings = SceneRenderSettings(useEnvLight=True, useAnalyticLights=True, useEmissiveLights=True, useGridVolumes=True, diffuseAlbedoMultiplier=1)
 m.scene.cameraSpeed = 1.0
 
 # Window Configuration
-m.resizeFrameBuffer(1920, 1080)
+m.resizeFrameBuffer(1280, 800)
 m.ui = True
 
 # Clock Settings
@@ -33,6 +38,8 @@ m.clock.framerate = 0
 # m.clock.frame = 0
 
 # Frame Capture
-m.frameCapture.outputDir = '.'
+m.frameCapture.outputDir = 'D:/Temp/FrameCapture'
 m.frameCapture.baseFilename = 'Mogwai'
 
+# framecapture.capture_cameras(m, 30)
+# framecapture.capture_frames(m, 0, 100)
