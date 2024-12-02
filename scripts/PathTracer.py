@@ -4,7 +4,7 @@ def render_graph_PathTracer():
     g = RenderGraph("PathTracer")
     PathTracer = createPass("PathTracer", {'samplesPerPixel': 1, 'useNRDDemodulation': False})
     g.addPass(PathTracer, "PathTracer")
-    VBufferRT = createPass("VBufferRT", {'outputSize': 'Default', 'samplePattern': 'Center', 'sampleCount': 16, 'useAlphaTest': True, 'adjustShadingNormals': True, 'forceCullMode': False, 'cull': 'Back', 'useTraceRayInline': False, 'useDOF': False})
+    VBufferRT = createPass("VBufferRT", {'outputSize': 'Default', 'samplePattern': 'Stratified', 'sampleCount': 16, 'useAlphaTest': True, 'adjustShadingNormals': True, 'forceCullMode': False, 'cull': 'Back', 'useTraceRayInline': False, 'useDOF': False})
     g.addPass(VBufferRT, "VBufferRT")
     AccumulatePass = createPass("AccumulatePass", {'enabled': True, 'outputSize': 'Default', 'autoReset': True, 'precisionMode': 'Single', 'maxFrameCount': 0, 'overflowMode': 'Stop'})
     g.addPass(AccumulatePass, "AccumulatePass")
