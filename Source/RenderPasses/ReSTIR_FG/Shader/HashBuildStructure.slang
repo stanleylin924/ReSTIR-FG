@@ -50,7 +50,7 @@ int findOrInsertCell(float3 pos, float3 norm, float cellSize, GIParameter params
         uint idx = cellIndex * 32 + i;
         uint checkSumPre;
 
-        checkSumBuffer.InterlockedCompareExchange(idx, 0, checkSum, checkSumPre);
+        checkSumBuffer.InterlockedCompareExchange(idx * 4, 0, checkSum, checkSumPre);
         if (checkSumPre == 0 || checkSumPre == checkSum)
             return idx;
     }
@@ -73,7 +73,7 @@ int findCell(float3 jitteredPos, float3 norm, float cellSize, GIParameter params
     {
         uint idx = cellIndex * 32 + i;
 
-        if (checkSumBuffer.Load(idx) == checkSum)
+        if (checkSumBuffer.Load(idx * 4) == checkSum)
             return idx;
     }
 

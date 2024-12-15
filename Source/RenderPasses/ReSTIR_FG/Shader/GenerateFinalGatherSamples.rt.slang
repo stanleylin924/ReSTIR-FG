@@ -136,7 +136,7 @@ HashAppendData buildHashAppendData(float3 pos, float3 norm, uint linearIdx)
         if (cellIdx != -1)
         {
             uint inCellIdx;
-            gCellCounterBuffer.InterlockedAdd(cellIdx, 1, inCellIdx);
+            gCellCounterBuffer.InterlockedAdd(cellIdx * 4, 1, inCellIdx);
             data.isValid = 1;
             data.cellIdx = cellIdx;
             data.inCellIdx = inCellIdx;

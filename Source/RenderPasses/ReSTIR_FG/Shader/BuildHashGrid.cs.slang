@@ -21,6 +21,6 @@ void main(uint2 pixel : SV_DispatchThreadID)
     if (data.isValid == 0)
         return;
 
-    uint baseIdx = gCellIndexBuffer.Load(data.cellIdx);
+    uint baseIdx = gCellIndexBuffer.Load(data.cellIdx * 4);
     gCellStorageBuffer[baseIdx + data.inCellIdx] = data.reservoirIdx;
 }

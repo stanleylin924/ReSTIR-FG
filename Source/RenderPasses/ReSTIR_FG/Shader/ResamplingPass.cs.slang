@@ -253,8 +253,8 @@ void spatialResampling(uint2 pixel, inout SampleGenerator sg, inout Reservoir r,
     {
         return;
     }
-    uint cellBaseIdx = gCellIndexBuffer.Load(cellIdx);
-    uint sampleCount = gCellCounterBuffer.Load(cellIdx);
+    uint cellBaseIdx = gCellIndexBuffer.Load(cellIdx * 4);
+    uint sampleCount = gCellCounterBuffer.Load(cellIdx * 4);
 
     numSamples = clamp(numSamples, 1, sampleCount);
     uint increment = (sampleCount + numSamples - 1) / numSamples;
@@ -494,8 +494,8 @@ void spatiotemporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reser
         temporalResampling(pixel, sg, r, fgSample, surface);
         return;
     }
-    uint cellBaseIdx = gCellIndexBuffer.Load(cellIdx);
-    uint sampleCount = gCellCounterBuffer.Load(cellIdx);
+    uint cellBaseIdx = gCellIndexBuffer.Load(cellIdx * 4);
+    uint sampleCount = gCellCounterBuffer.Load(cellIdx * 4);
 
     numSamples = clamp(numSamples, 1, foundTemporalSurface ? sampleCount + 1 : sampleCount);
     uint increment = (sampleCount + numSamples - 1) / numSamples;
