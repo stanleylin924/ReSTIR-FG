@@ -197,7 +197,7 @@ private:
     uint mFrameCount = 0;
     bool mReservoirValid = false;
     uint2 mScreenRes = uint2(0, 0);                                 //Store screen res to react to changes
-    RenderMode mRenderMode = RenderMode::ReSTIRFG;
+    RenderMode mRenderMode = RenderMode::ReSTIRGI;
     ResamplingMode mResamplingMode = ResamplingMode::SpartioTemporal;
     DirectLightingMode mDirectLightMode = DirectLightingMode::RTXDI;
     bool mUseReduceTexPrecision = false;                             //Uses F16 instead of F32 for some textures. Can result in a loss of precision
