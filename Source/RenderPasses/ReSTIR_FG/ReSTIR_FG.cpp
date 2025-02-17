@@ -338,6 +338,21 @@ void ReSTIR_FG::execute(RenderContext* pRenderContext, const RenderData& renderD
         (mRenderMode == RenderMode::ReSTIRFG || mRenderMode == RenderMode::FinalGather))
         causticResamplingPass(pRenderContext, renderData);
 
+    //Disocclusion Processing
+    for (int i = 0; i < 6; i++)
+    {
+        mFrameCount++;
+
+        if (mRenderMode == RenderMode::ReSTIRGI)
+        {
+            generateReSTIRGISamples(pRenderContext, renderData);
+        }
+
+        // Do resampling
+        if ((mRenderMode == RenderMode::ReSTIRFG) || (mRenderMode == RenderMode::ReSTIRGI))
+            resamplingPass(pRenderContext, renderData, true);
+    }
+
     finalShadingPass(pRenderContext, renderData);
 
     if (mpRTXDI) mpRTXDI->endFrame(pRenderContext);
@@ -1641,7 +1656,7 @@ void ReSTIR_FG::collectPhotonsSplit(RenderContext* pRenderContext, const RenderD
      mpScene->raytrace(pRenderContext, mCollectPhotonPass.pProgram.get(), mCollectPhotonPass.pVars, uint3(targetDim, 1));
 }
 
-void ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const RenderData& renderData) {
+void ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const RenderData& renderData, bool disocclusionProcessing) {
      std::string profileName = "SpatiotemporalResampling";
      if (mResamplingMode == ResamplingMode::Temporal)
         profileName = "TemporalResampling";
@@ -1722,6 +1737,7 @@ void ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const RenderData& 
      var[uniformName]["gDisocclusionBoostSamples"] = mDisocclusionBoostSamples;
      var[uniformName]["gAttenuationRadius"] = mSampleRadiusAttenuation;
      var[uniformName]["gJacobianMinMax"] = mJacobianMinMax;
+     var[uniformName]["gDisocclusionProcessing"] = disocclusionProcessing;
 
      // Execute
      const uint2 targetDim = renderData.getDefaultTextureDims();

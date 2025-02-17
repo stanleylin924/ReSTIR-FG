@@ -152,7 +152,7 @@ private:
 
     /** Resampling pass, which resamples the generated sampled based on the resampling mode
     */
-    void resamplingPass(RenderContext* pRenderContext, const RenderData& renderData);
+    void resamplingPass(RenderContext* pRenderContext, const RenderData& renderData, bool disocclusionProcessing = false);
 
     /** Resampling pass for the caustic photons
      */

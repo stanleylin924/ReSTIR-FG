@@ -55,7 +55,8 @@ cbuffer Constant
     uint gDisocclusionBoostSamples; //Number of spatial samples if no temporal surface was found
     float gAttenuationRadius;       //Radius for the attenuation
     float2 gJacobianMinMax;         //Minimum and Maximum values for the jacobian
-    uint _pad;
+    bool gDisocclusionProcessing;   //Disocclusion processing
+    //uint _pad;
 }
 
 struct LightSample{
@@ -115,7 +116,7 @@ void temporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reservoir r
     uint historyLimit = gMaxAge * r.M;
 
     //Reproject to the previous pixel using the motion vectors
-    float2 motionOffset = gMVec[pixel] * float2(gFrameDim);
+    float2 motionOffset = (gDisocclusionProcessing ? float2(0.0f, 0.0f) : gMVec[pixel] * float2(gFrameDim));
     float2 prevIdxF = motionOffset + float2(pixel);
     float2 rndOffset = sampleNext2D(sg) - 0.5f;
     prevIdxF += rndOffset;
@@ -367,7 +368,7 @@ void spatiotemporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reser
     uint historyLimit = gMaxAge;
 
     //Check if motion vectors are inside of the frame
-    float2 motionOffset = gMVec[pixel] * float2(gFrameDim);
+    float2 motionOffset = (gDisocclusionProcessing ? float2(0.0f, 0.0f) : gMVec[pixel] * float2(gFrameDim));
     float2 prevIdxF = motionOffset + float2(pixel);
     float2 rndOffset = sampleNext2D(sg) - 0.5f;
     prevIdxF += rndOffset;
