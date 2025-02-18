@@ -63,6 +63,7 @@ namespace
     const std::string kOutputDiffuseReflectance = "diffuseReflectance";
     const std::string kOutputSpecularReflectance = "specularReflectance";
     const std::string kOutputResidualRadiance = "residualRadiance";     //The rest (transmission, delta)
+    const std::string kOutputDisocclusion = "disocclusion"; // 顯示位於 disocclusion 區域的像素
 
     const Falcor::ChannelList kOutputChannels{
         {kOutputColor,                  "gOutColor",                "Output Color (linear)", true /*optional*/, ResourceFormat::RGBA32Float},
@@ -72,6 +73,7 @@ namespace
         {kOutputDiffuseReflectance,     "gOutDiffuseReflectance",   "Output primary surface diffuse reflectance", true /*optional*/, ResourceFormat::RGBA16Float},
         {kOutputSpecularReflectance,    "gOutSpecularReflectance",  "Output primary surface specular reflectance", true /*optional*/, ResourceFormat::RGBA16Float},
         {kOutputResidualRadiance,       "gOutResidualRadiance",     "Output residual color (transmission/delta)", true /*optional*/, ResourceFormat::RGBA32Float},
+        {kOutputDisocclusion,           "gOutDisocclusion",         "Output disocclusion areas", true /*optional*/, ResourceFormat::RGBA32Float},
     };
 
     //Properties for Render Graph
@@ -339,13 +341,13 @@ void ReSTIR_FG::execute(RenderContext* pRenderContext, const RenderData& renderD
         causticResamplingPass(pRenderContext, renderData);
 
     //Disocclusion Processing
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 6; i++) // 必須迭代偶數次
     {
         mFrameCount++;
 
         if (mRenderMode == RenderMode::ReSTIRGI)
         {
-            generateReSTIRGISamples(pRenderContext, renderData);
+            generateReSTIRGISamples(pRenderContext, renderData, true);
         }
 
         // Do resampling
@@ -894,6 +896,7 @@ void ReSTIR_FG::prepareBuffers(RenderContext* pRenderContext, const RenderData& 
         mpViewDirDIPrev.reset();
         mpThpDI.reset();
         mpSampleGenState.reset();
+        mpDisocclusionMask.reset();
         mResetTex = false;
     }
 
@@ -1149,6 +1152,14 @@ void ReSTIR_FG::prepareBuffers(RenderContext* pRenderContext, const RenderData& 
         mpPhotonCullingMask->setName("ReSTIR_FG::PhotonCullingMask");
     }
 
+    if (!mpDisocclusionMask)
+    {
+        mpDisocclusionMask = Texture::create2D(
+            mpDevice, mScreenRes.x, mScreenRes.y, ResourceFormat::R8Uint, 1u, 1u, nullptr,
+            ResourceBindFlags::UnorderedAccess | ResourceBindFlags::ShaderResource
+        );
+        mpDisocclusionMask->setName("ReSTIR_FG::DisocclusionMask");
+    }
 }
 
 void ReSTIR_FG::prepareAccelerationStructure() {
@@ -1272,7 +1283,7 @@ void ReSTIR_FG::traceTransmissiveDelta(RenderContext* pRenderContext, const Rend
     mpScene->raytrace(pRenderContext, mTraceTransmissionDelta.pProgram.get(), mTraceTransmissionDelta.pVars, uint3(mScreenRes, 1));
 }
 
-void ReSTIR_FG::generateReSTIRGISamples(RenderContext* pRenderContext, const RenderData& renderData) {
+void ReSTIR_FG::generateReSTIRGISamples(RenderContext* pRenderContext, const RenderData& renderData, bool disocclusionProcessing) {
     FALCOR_PROFILE(pRenderContext, "TracePathGI");
 
     mReSTIRGISamplePass.pProgram->addDefine("USE_REDUCED_RESERVOIR_FORMAT", mUseReducedReservoirFormat ? "1" : "0");
@@ -1299,6 +1310,7 @@ void ReSTIR_FG::generateReSTIRGISamples(RenderContext* pRenderContext, const Ren
     var[nameBuf]["gFrameCount"] = mFrameCount;
     var[nameBuf]["gAttenuationRadius"] = mSampleRadiusAttenuation;
     var[nameBuf]["gBounces"] = mGIMaxBounces;
+    var[nameBuf]["gDisocclusionProcessing"] = disocclusionProcessing;
 
     if (mpRTXDI)
         mpRTXDI->setShaderData(var);
@@ -1314,6 +1326,7 @@ void ReSTIR_FG::generateReSTIRGISamples(RenderContext* pRenderContext, const Ren
     var["gSurfaceData"] = mpSurfaceBuffer[mFrameCount % 2];
     var["gGISample"] = mpFGSampelDataBuffer[mFrameCount % 2];
     var["gSampleGenState"] = mpSampleGenState;
+    var["gDisocclusionMask"] = mpDisocclusionMask;
 
     FALCOR_ASSERT(mScreenRes.x > 0 && mScreenRes.y > 0);
     mpScene->raytrace(pRenderContext, mReSTIRGISamplePass.pProgram.get(), mReSTIRGISamplePass.pVars, uint3(mScreenRes, 1));
@@ -1723,6 +1736,7 @@ void ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const RenderData& 
      var["gPrevView"] = mpViewDirPrev;
      var["gMVec"] = renderData[kInputMotionVectors]->asTexture();
      var["gSampleGenState"] = mpSampleGenState;
+     var["gDisocclusionMask"] = mpDisocclusionMask;
 
      std::string uniformName = "PerFrame";
      var[uniformName]["gFrameCount"] = mFrameCount;
@@ -1917,6 +1931,7 @@ void ReSTIR_FG::finalShadingPass(RenderContext* pRenderContext, const RenderData
      var["gViewPrev"] = mpViewDirPrev;
 
      var["gSampleGenState"] = mpSampleGenState;
+     var["gDisocclusionMask"] = mpDisocclusionMask;
 
      uint causticRadianceIdx = mCausticCollectMode == CausticCollectionMode::Temporal ? mFrameCount % 2 : 0;
 

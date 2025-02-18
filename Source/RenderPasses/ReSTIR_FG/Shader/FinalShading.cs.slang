@@ -68,6 +68,9 @@ Texture2D<uint4> gCausticReservoir;
 Texture2D<uint4> gDirectFGReservoir;
 #endif
 
+Texture2D<uint> gDisocclusionMask;
+RWTexture2D<float4> gOutDisocclusion;
+
 #define is_valid(name) (is_valid_##name != 0)
 
 cbuffer PerFrame
@@ -364,4 +367,5 @@ void main(uint2 pixel : SV_DispatchThreadID)
     if (is_valid(gOutDiffuseRadiance)) gOutDiffuseRadiance[pixel] = float4(diffuseIllumination, hitT);
     if (is_valid(gOutSpecularRadiance))gOutSpecularRadiance[pixel] = float4(specularIllumination, hitTSpec);
     if (is_valid(gOutResidualRadiance))  gOutResidualRadiance[pixel] = float4(0.f); //TODO 
+    if (is_valid(gOutDisocclusion)) gOutDisocclusion[pixel] = gDisocclusionMask[pixel] ? float4(0.f, 1.f, 0.f, 1.f) : float4(color, 1.f);
 }

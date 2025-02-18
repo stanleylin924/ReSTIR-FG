@@ -128,7 +128,7 @@ private:
 
     /** Generate ReSTIR GI samples
     */
-    void generateReSTIRGISamples(RenderContext* pRenderContext, const RenderData& renderData);
+    void generateReSTIRGISamples(RenderContext* pRenderContext, const RenderData& renderData, bool disocclusionProcessing = false);
 
      /** Trace Scene for final gather hit
      */
@@ -331,6 +331,7 @@ private:
     ref<Texture> mpViewDirRayDistDI;   // View dir tex (RTXDI or DirectAnalytical)
     ref<Texture> mpViewDirDIPrev;      // Previous View dir for direct surfaces
     ref<Texture> mpThpDI;              // Throughput (RTXDI or DirectAnalytical)
+    ref<Texture> mpDisocclusionMask;   // 用來標記位於 disocclusion 區域的像素
 
     //
     //Render Passes/Programms

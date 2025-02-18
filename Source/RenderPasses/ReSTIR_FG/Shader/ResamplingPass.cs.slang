@@ -31,6 +31,7 @@ Texture2D<float2> gMVec;
 Texture2D<float4> gView;
 Texture2D<float4> gPrevView;
 RWStructuredBuffer<SampleGenerator> gSampleGenState;
+RWTexture2D<uint> gDisocclusionMask;
 
 #define BIAS_MODE_BASIC 1
 #define BIAS_MODE_RAYTRACE 2
@@ -72,6 +73,7 @@ struct PhotonLight{
 static const float kRayEpsilon = 0.99f;
 static const float kRayNearEpsilon = 0.01f;
 
+static bool gIsDisocclusion = false;
 
 SurfaceFG getSurface(uint2 idx, bool prev)
 {
@@ -159,6 +161,9 @@ void temporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reservoir r
         foundTemporalSurface = true;
         break;
     }
+
+    //If no temporal surface was found, we need to mark the pixel as disocclusion
+    gIsDisocclusion = !foundTemporalSurface;
 
     //If temporal surface was found, resample the previous sample
     if (foundTemporalSurface)
@@ -410,6 +415,9 @@ void spatiotemporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reser
         break;
     }
 
+    //If no temporal surface was found, we need to mark the pixel as disocclusion
+    gIsDisocclusion = !foundTemporalSurface;
+
     //
     //Spartio Temporal Resampling
     //
@@ -558,7 +566,10 @@ void spatiotemporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reser
 
 [numthreads(16, 16, 1)]
 void main(uint2 dTid : SV_DispatchThreadID)
-{    
+{
+    if (gDisocclusionProcessing && gDisocclusionMask[dTid] == 0u)
+        return;
+
     //Check if surface is valid
     SurfaceFG surface = getSurface(dTid, false);
     if (!surface.valid)
@@ -611,4 +622,8 @@ void main(uint2 dTid : SV_DispatchThreadID)
     #if STORE_SAMPLE_GEN_STATE
         gSampleGenState[index2Dto1D(dTid, gFrameDim.x)] = sg;
     #endif //STORE_SAMPLE_GEN_STATE
+
+    // Highlight disocclusion areas
+    if (!gDisocclusionProcessing)
+        gDisocclusionMask[dTid] = gIsDisocclusion ? 1u : 0u;
 }

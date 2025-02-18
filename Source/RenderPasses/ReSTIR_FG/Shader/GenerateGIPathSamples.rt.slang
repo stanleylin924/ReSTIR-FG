@@ -27,13 +27,15 @@ cbuffer PerFrame
     uint gFrameCount;       // Frame count since scene was loaded.
     float gAttenuationRadius;
     uint gBounces;
-    uint _pad;
+    bool gDisocclusionProcessing;   // Disocclusion processing
+    //uint _pad;
 }
 
 // Inputs
 Texture2D<PackedHitInfo> gVBuffer;
 Texture2D<float4> gView;
 Texture2D <float>gLinZ;
+Texture2D<uint> gDisocclusionMask;
 
 //Outputs
 RWStructuredBuffer<PackedSurfaceDataFG> gSurfaceData;
@@ -295,6 +297,9 @@ void rayGen()
     uint2 launchIndex = DispatchRaysIndex().xy;
     uint2 launchDim = DispatchRaysDimensions().xy;
     
+    if (gDisocclusionProcessing && gDisocclusionMask[launchIndex] == 0u)
+        return;
+
     HitInfo hitInfo = HitInfo(gVBuffer[launchIndex]);
     SurfaceFG surface = SurfaceFG();
     Reservoir reservoir = Reservoir();
