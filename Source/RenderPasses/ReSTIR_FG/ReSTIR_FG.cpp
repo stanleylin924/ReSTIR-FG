@@ -1733,7 +1733,7 @@ void ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const RenderData& 
 
      //View
      var["gView"] = mpViewDir;
-     var["gPrevView"] = mpViewDirPrev;
+     var["gPrevView"] = (disocclusionProcessing ? mpViewDir : mpViewDirPrev);
      var["gMVec"] = renderData[kInputMotionVectors]->asTexture();
      var["gSampleGenState"] = mpSampleGenState;
      var["gDisocclusionMask"] = mpDisocclusionMask;
