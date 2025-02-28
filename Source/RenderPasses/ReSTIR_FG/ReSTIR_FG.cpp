@@ -1284,7 +1284,8 @@ void ReSTIR_FG::traceTransmissiveDelta(RenderContext* pRenderContext, const Rend
 }
 
 void ReSTIR_FG::generateReSTIRGISamples(RenderContext* pRenderContext, const RenderData& renderData, bool disocclusionProcessing) {
-    FALCOR_PROFILE(pRenderContext, "TracePathGI");
+    std::string profileName = std::string("TracePathGI") + (disocclusionProcessing ? "Disocclusion" : "");
+    FALCOR_PROFILE(pRenderContext, profileName);
 
     mReSTIRGISamplePass.pProgram->addDefine("USE_REDUCED_RESERVOIR_FORMAT", mUseReducedReservoirFormat ? "1" : "0");
     mReSTIRGISamplePass.pProgram->addDefine("USE_RTXDI", mpRTXDI ? "1" : "0");
@@ -1670,11 +1671,11 @@ void ReSTIR_FG::collectPhotonsSplit(RenderContext* pRenderContext, const RenderD
 }
 
 void ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const RenderData& renderData, bool disocclusionProcessing) {
-     std::string profileName = "SpatiotemporalResampling";
+     std::string profileName = std::string("SpatiotemporalResampling") + (disocclusionProcessing ? "Disocclusion" : "");
      if (mResamplingMode == ResamplingMode::Temporal)
-        profileName = "TemporalResampling";
+        profileName = std::string("TemporalResampling") + (disocclusionProcessing ? "Disocclusion" : "");
      else if (mResamplingMode == ResamplingMode::Spatial)
-        profileName = "SpatialResampling";
+        profileName = std::string("SpatialResampling") + (disocclusionProcessing ? "Disocclusion" : "");
 
      FALCOR_PROFILE(pRenderContext, profileName);
 
