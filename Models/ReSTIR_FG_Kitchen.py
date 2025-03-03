@@ -17,8 +17,8 @@ def render_graph_ReSTIR_FG():
     g.add_edge('VBufferRT.mvec', 'ReSTIR_FG.mvec')
     g.add_edge('VBufferRT.vbuffer', 'ReSTIR_FG.vbuffer')
     g.add_edge('ReSTIR_FG.color', 'AccumulatePass.input')
+    # g.add_edge('ReSTIR_FG.disocclusion', 'AccumulatePass.input')  # Profiler: 觀察 disocclusion 像素個數
     g.mark_output('ToneMapper.dst')
-    g.mark_output('AccumulatePass.output')
     return g
 m.addGraph(render_graph_ReSTIR_FG())
 
@@ -29,6 +29,7 @@ m.scene.cameraSpeed = 1.0
 
 # Window Configuration
 m.resizeFrameBuffer(1280, 800)
+# m.resizeFrameBuffer(1000, 800)  # Profiler: 統計 disocclusion 像素個數 vs. 處理耗時，以 1000 為單位便於統計
 m.ui = True
 
 # Clock Settings
@@ -36,10 +37,62 @@ m.clock.time = 0
 m.clock.framerate = 30
 # If framerate is not zero, you can use the frame property to set the start frame
 # m.clock.frame = 0
+# m.clock.exitFrame = 250
 
 # Frame Capture
 m.frameCapture.outputDir = 'D:/Temp/FrameCapture'
 m.frameCapture.baseFilename = 'Mogwai'
 
 # framecapture.capture_cameras(m, 30)
-# framecapture.capture_frames(m, 0, 1000)
+framecapture.capture_frames(m, 179, 229)
+# m.timingCapture.captureFrameTime("D:/Temp/FrameCapture/timecapture.csv")
+
+# Profiler: Disocclusion 效能分析
+meanFrameTime = 0
+meanTracePathTime = 0
+meanResamplingTime = 0
+frameCount = 0  # 計算有效幀數
+m.profiler.enabled = True
+for frame in range(250):
+    m.renderFrame()
+    # Profiler: 打印 183~196 幀的 Disocclusion 效能數據
+    if m.clock.frame in range(183, 197):
+        print(f"Frame ID: {m.clock.frame}", flush=True)
+        cputime = m.profiler.events["/onFrameRender/cpu_time"]["value"]
+        gputime = m.profiler.events["/onFrameRender/gpu_time"]["value"]
+        print(f"Frame time: {cputime}/{gputime} ms")
+        cputime = m.profiler.events["/onFrameRender/RenderGraphExe::execute()/ReSTIR_FG/TracePathGIDisocclusion/cpu_time"]["value"]
+        gputime = m.profiler.events["/onFrameRender/RenderGraphExe::execute()/ReSTIR_FG/TracePathGIDisocclusion/gpu_time"]["value"]
+        print(f"TracePathGI time: {cputime}/{gputime} ms")
+        cputime = m.profiler.events["/onFrameRender/RenderGraphExe::execute()/ReSTIR_FG/SpatiotemporalResamplingDisocclusion/cpu_time"]["value"]
+        gputime = m.profiler.events["/onFrameRender/RenderGraphExe::execute()/ReSTIR_FG/SpatiotemporalResamplingDisocclusion/gpu_time"]["value"]
+        print(f"SpatiotemporalResampling time: {cputime}/{gputime} ms")
+    # Profiler: 計算 200 幀的 Disocclusion 統計數據
+    """
+    if m.clock.frame in range(10, 210):  # 跳過前面 10 幀 (warm up 時間可能失真)
+        gputime1 = m.profiler.events.get("/onFrameRender/gpu_time", {}).get("value", None)
+        gputime2 = m.profiler.events.get("/onFrameRender/RenderGraphExe::execute()/ReSTIR_FG/TracePathGIDisocclusion/gpu_time", {}).get("value", None)
+        gputime3 = m.profiler.events.get("/onFrameRender/RenderGraphExe::execute()/ReSTIR_FG/SpatiotemporalResamplingDisocclusion/gpu_time", {}).get("value", None)
+        if all(t is not None for t in [gputime1, gputime2, gputime3]):  # 確保所有數據都可用
+            meanFrameTime += gputime1
+            meanTracePathTime += gputime2
+            meanResamplingTime += gputime3
+            frameCount += 1  # 只有有效 GPU 時間才計數
+        else:
+            print(f"Warning: GPU time not available for frame {m.clock.frame}")
+    """
+
+m.profiler.enabled = False
+
+# Profiler: 打印 200 幀的 Disocclusion 統計數據
+"""
+if frameCount > 0:
+    meanFrameTime /= frameCount
+    meanTracePathTime /= frameCount
+    meanResamplingTime /= frameCount
+    print(f"Mean frame time for {frameCount} frames: {meanFrameTime} ms")  # 平均每幀耗時
+    print(f"Mean trace path time for {frameCount} frames: {meanTracePathTime} ms")  # 平均 trace path (inital sampling) 階段耗時 for Disocclusion 處理
+    print(f"Mean resampling time for {frameCount} frames: {meanResamplingTime} ms") # 平均 resampling 階段耗時 for Disocclusion 處理
+else:
+    print("No valid frame times captured.")
+"""

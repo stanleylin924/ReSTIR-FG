@@ -408,6 +408,10 @@ void spatiotemporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reser
         //Test surface similarity and discard if too different
         if (!surface.isValidNeighbor(temporalSurface, gDepthThreshold, gNormalThreshold))
             continue;
+
+        // Profiler: 統計 disocclusion 像素個數 vs. 處理耗時
+        //if (!gDisocclusionProcessing && pixel.y < 200)
+            //continue;
         
         //Valid hit was found
         temporalOffset = offset;
@@ -417,6 +421,8 @@ void spatiotemporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reser
 
     //If no temporal surface was found, we need to mark the pixel as disocclusion
     gIsDisocclusion = !foundTemporalSurface;
+    // Profiler: 統計 disocclusion 像素個數 vs. 處理耗時
+    //gIsDisocclusion = !foundTemporalSurface && pixel.y < 200;
 
     //
     //Spartio Temporal Resampling
