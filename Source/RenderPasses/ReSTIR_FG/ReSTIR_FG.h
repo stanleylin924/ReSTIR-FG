@@ -128,7 +128,7 @@ private:
 
     /** Generate ReSTIR GI samples
     */
-    void generateReSTIRGISamples(RenderContext* pRenderContext, const RenderData& renderData, bool disocclusionProcessing = false);
+    void generateReSTIRGISamples(RenderContext* pRenderContext, const RenderData& renderData, bool disocclusionProcessing = false, bool skipTraceRay = true);
 
      /** Trace Scene for final gather hit
      */

@@ -28,7 +28,8 @@ cbuffer PerFrame
     float gAttenuationRadius;
     uint gBounces;
     bool gDisocclusionProcessing;   // Disocclusion processing
-    //uint _pad;
+    bool gSkipTraceRay;             // Skip trace ray during disocclusion processing
+    uint _pad[3];
 }
 
 // Inputs
@@ -343,6 +344,9 @@ void rayGen()
         
         for (uint i = 0; (i < gBounces) && validSample; i++)
         {
+            if (gDisocclusionProcessing && gSkipTraceRay)
+                break;
+
             RayDesc tRay;
             tRay.Origin = sd.computeNewRayOrigin();
             tRay.TMin = 0.0001f;

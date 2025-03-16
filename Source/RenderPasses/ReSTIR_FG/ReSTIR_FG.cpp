@@ -1283,7 +1283,7 @@ void ReSTIR_FG::traceTransmissiveDelta(RenderContext* pRenderContext, const Rend
     mpScene->raytrace(pRenderContext, mTraceTransmissionDelta.pProgram.get(), mTraceTransmissionDelta.pVars, uint3(mScreenRes, 1));
 }
 
-void ReSTIR_FG::generateReSTIRGISamples(RenderContext* pRenderContext, const RenderData& renderData, bool disocclusionProcessing) {
+void ReSTIR_FG::generateReSTIRGISamples(RenderContext* pRenderContext, const RenderData& renderData, bool disocclusionProcessing, bool skipTraceRay) {
     std::string profileName = std::string("TracePathGI") + (disocclusionProcessing ? "Disocclusion" : "");
     FALCOR_PROFILE(pRenderContext, profileName);
 
@@ -1312,6 +1312,7 @@ void ReSTIR_FG::generateReSTIRGISamples(RenderContext* pRenderContext, const Ren
     var[nameBuf]["gAttenuationRadius"] = mSampleRadiusAttenuation;
     var[nameBuf]["gBounces"] = mGIMaxBounces;
     var[nameBuf]["gDisocclusionProcessing"] = disocclusionProcessing;
+    var[nameBuf]["gSkipTraceRay"] = skipTraceRay;
 
     if (mpRTXDI)
         mpRTXDI->setShaderData(var);
