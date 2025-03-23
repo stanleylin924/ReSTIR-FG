@@ -444,6 +444,7 @@ void spatiotemporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reser
     //
     
     uint numSamples = foundTemporalSurface ? gSpatialSamples + 1 : max(gSpatialSamples + 1, gDisocclusionBoostSamples);
+    if (gDisocclusionProcessing) numSamples = 8;  // Increase the number of samples for disocclusion processing
     numSamples = clamp(numSamples, 1, 8); //Cap at 8 samples for the later bias correction
     uint cachedIndices[8]; //Store all indeces. 32 Bits per 2D index (16 per element)
     uint cachedM[4];
