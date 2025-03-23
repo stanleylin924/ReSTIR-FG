@@ -89,3 +89,12 @@ struct Reservoir{
             weightSum = 0;
     }
 };
+
+enum DisocclusionType : uint
+{
+    kNone = 0u,
+    kInvalid = 1u,
+    kOutOfFrame = 2u,
+    kBadSimilarity = 3u,
+    kProfiler = 4u,
+};

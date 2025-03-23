@@ -367,5 +367,24 @@ void main(uint2 pixel : SV_DispatchThreadID)
     if (is_valid(gOutDiffuseRadiance)) gOutDiffuseRadiance[pixel] = float4(diffuseIllumination, hitT);
     if (is_valid(gOutSpecularRadiance))gOutSpecularRadiance[pixel] = float4(specularIllumination, hitTSpec);
     if (is_valid(gOutResidualRadiance))  gOutResidualRadiance[pixel] = float4(0.f); //TODO 
-    if (is_valid(gOutDisocclusion)) gOutDisocclusion[pixel] = gDisocclusionMask[pixel] ? float4(0.f, 1.f, 0.f, 1.f) : float4(color, 1.f);
+    if (is_valid(gOutDisocclusion))
+    {
+        switch (gDisocclusionMask[pixel]) {
+        case DisocclusionType::kInvalid:
+            gOutDisocclusion[pixel] = float4(0.f, 0.f, 1.f, 1.f);  // Blue
+            break;
+        case DisocclusionType::kOutOfFrame:
+            gOutDisocclusion[pixel] = float4(1.f, 1.f, 0.f, 1.f);  // Yellow
+            break;
+        case DisocclusionType::kBadSimilarity:
+            gOutDisocclusion[pixel] = float4(0.f, 1.f, 0.f, 1.f);  // Green
+            break;
+        case DisocclusionType::kProfiler:
+            gOutDisocclusion[pixel] = float4(0.f, 1.f, 1.f, 1.f);  // Cyan
+            break;
+        default:
+            gOutDisocclusion[pixel] = float4(color, 1.f);
+            break;
+        }
+    }
 }

@@ -73,7 +73,7 @@ struct PhotonLight{
 static const float kRayEpsilon = 0.99f;
 static const float kRayNearEpsilon = 0.01f;
 
-static bool gIsDisocclusion = false;
+static DisocclusionType gIsDisocclusion = DisocclusionType::kNone;
 
 SurfaceFG getSurface(uint2 idx, bool prev)
 {
@@ -145,25 +145,32 @@ void temporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reservoir r
         idx = prevIdx + offset;
 
         //Return if index is invalid
-        if(any(idx < 0) || any(idx >= gFrameDim))
+        if (any(idx < 0) || any(idx >= gFrameDim))
+        {
+            gIsDisocclusion = DisocclusionType::kOutOfFrame;
             continue;
+        }
         
         //Get Hit sample from last frame
         temporalSurface = getSurface(idx, true);
         if (!temporalSurface.valid)
+        {
+            gIsDisocclusion = DisocclusionType::kInvalid;
             continue;
+        }
 
         //Test surface similarity and discard if too different
         if (!surface.isValidNeighbor(temporalSurface, gDepthThreshold, gNormalThreshold))
+        {
+            gIsDisocclusion = DisocclusionType::kBadSimilarity;
             continue;
+        }
 
         //Valid hit was found
         foundTemporalSurface = true;
+        gIsDisocclusion = DisocclusionType::kNone;
         break;
     }
-
-    //If no temporal surface was found, we need to mark the pixel as disocclusion
-    gIsDisocclusion = !foundTemporalSurface;
 
     //If temporal surface was found, resample the previous sample
     if (foundTemporalSurface)
@@ -397,17 +404,26 @@ void spatiotemporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reser
         int2 idx = prevIdx + offset;
 
         //Return if idx is not valid
-        if(any(idx < 0) || any(idx >= gFrameDim))
+        if (any(idx < 0) || any(idx >= gFrameDim))
+        {
+            gIsDisocclusion = DisocclusionType::kOutOfFrame;
             continue;
+        }
         
         //Get Hit sample from last frame
         SurfaceFG temporalSurface = getSurface(idx, true);
         if (!temporalSurface.valid)
+        {
+            gIsDisocclusion = DisocclusionType::kInvalid;
             continue;
+        }
 
         //Test surface similarity and discard if too different
         if (!surface.isValidNeighbor(temporalSurface, gDepthThreshold, gNormalThreshold))
+        {
+            gIsDisocclusion = DisocclusionType::kBadSimilarity;
             continue;
+        }
 
         // Profiler: 統計 disocclusion 像素個數 vs. 處理耗時
         //if (!gDisocclusionProcessing && pixel.y < 200)
@@ -416,13 +432,12 @@ void spatiotemporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reser
         //Valid hit was found
         temporalOffset = offset;
         foundTemporalSurface = true;
+        gIsDisocclusion = DisocclusionType::kNone;
         break;
     }
 
-    //If no temporal surface was found, we need to mark the pixel as disocclusion
-    gIsDisocclusion = !foundTemporalSurface;
     // Profiler: 統計 disocclusion 像素個數 vs. 處理耗時
-    //gIsDisocclusion = !foundTemporalSurface && pixel.y < 200;
+    //gIsDisocclusion = (!foundTemporalSurface && pixel.y < 200 ? DisocclusionType::kProfiler : DisocclusionType::kNone);
 
     //
     //Spartio Temporal Resampling
@@ -573,7 +588,7 @@ void spatiotemporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reser
 [numthreads(16, 16, 1)]
 void main(uint2 dTid : SV_DispatchThreadID)
 {
-    if (gDisocclusionProcessing && gDisocclusionMask[dTid] == 0u)
+    if (gDisocclusionProcessing && gDisocclusionMask[dTid] == (uint) DisocclusionType::kNone)
         return;
 
     //Check if surface is valid
@@ -631,5 +646,5 @@ void main(uint2 dTid : SV_DispatchThreadID)
 
     // Highlight disocclusion areas
     if (!gDisocclusionProcessing)
-        gDisocclusionMask[dTid] = gIsDisocclusion ? 1u : 0u;
+        gDisocclusionMask[dTid] = (uint) gIsDisocclusion;
 }

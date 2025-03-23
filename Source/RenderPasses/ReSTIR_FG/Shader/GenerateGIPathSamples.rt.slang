@@ -298,7 +298,7 @@ void rayGen()
     uint2 launchIndex = DispatchRaysIndex().xy;
     uint2 launchDim = DispatchRaysDimensions().xy;
     
-    if (gDisocclusionProcessing && gDisocclusionMask[launchIndex] == 0u)
+    if (gDisocclusionProcessing && gDisocclusionMask[launchIndex] == (uint) DisocclusionType::kNone)
         return;
 
     HitInfo hitInfo = HitInfo(gVBuffer[launchIndex]);
