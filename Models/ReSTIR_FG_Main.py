@@ -1,7 +1,10 @@
 import os
 
-# with open(os.path.dirname(__file__) + '\\ReSTIR_FG_Kitchen.py') as file:
-# with open(os.path.dirname(__file__) + '\\ReSTIR_FG_VeachAjar.py') as file:
-with open(os.path.dirname(__file__) + '\\ReSTIR_FG_PinkRoom.py') as file:
-# with open(os.path.dirname(__file__) + '\\..\\scripts\\PathTracer.py') as file:
+file_name = "ReSTIR_FG_Kitchen.py"
+# file_name = "ReSTIR_FG_VeachAjar.py"
+# file_name = "ReSTIR_FG_PinkRoom.py"
+# file_name = "..\\scripts\\PathTracer.py"
+
+file_path = os.path.join(os.path.dirname(__file__), file_name)
+with open(file_path, 'r', encoding='utf-8') as file:
     exec(file.read())
