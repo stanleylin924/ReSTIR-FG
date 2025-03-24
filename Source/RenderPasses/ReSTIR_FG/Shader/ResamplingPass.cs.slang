@@ -187,6 +187,7 @@ void temporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reservoir r
             prev.weightSum = 0;
             prev.M = 0;
             sampleValid = false;
+            gIsDisocclusion = DisocclusionType::kInvalid;  // 無效的 temporal sample，標記為 disocclusion 以便後續做進一步處理
         }
 
         //Get target pdf at current location if reservoir and sample are valid
@@ -498,6 +499,8 @@ void spatiotemporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reser
             sampledReservoir.weightSum = 0;
             sampledReservoir.M = 0;
             sampleValid = false;
+            if (i == 0 && foundTemporalSurface)
+                gIsDisocclusion = DisocclusionType::kInvalid;  // 無效的 temporal sample，標記為 disocclusion 以便後續做進一步處理
         }
 
         //Store indices
