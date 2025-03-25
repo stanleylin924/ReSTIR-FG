@@ -7,6 +7,19 @@ import sys
 sys.path.append('D:/3D_Scene/script')
 import framecapture
 
+ENABLE_CAPTURE_FRAME = True
+ENABLE_DISOCCLUSION_OUTPUT = False
+ENABLE_AUTO_EXIT = True
+ENABLE_PROFILER = False
+PROFILE_MEAN_FRAME_TIME = True
+PROFILE_DISOCCLUSION_TIME = False
+PROFILE_SINGLE_FRAME = False
+ENABLE_CAMERA_ORIENTATION = False
+
+# 檢測單幀數據時，關閉截圖以避免影響分析數據
+if ENABLE_PROFILER and PROFILE_SINGLE_FRAME:
+    ENABLE_CAPTURE_FRAME = False
+
 def render_graph_ReSTIR_FG():
     g = RenderGraph('ReSTIR_FG')
     g.create_pass('AccumulatePass', 'AccumulatePass', {'enabled': False, 'outputSize': 'Default', 'autoReset': True, 'precisionMode': 'Single', 'maxFrameCount': 0, 'overflowMode': 'Stop'})
@@ -16,19 +29,29 @@ def render_graph_ReSTIR_FG():
     g.add_edge('AccumulatePass.output', 'ToneMapper.src')
     g.add_edge('VBufferRT.mvec', 'ReSTIR_FG.mvec')
     g.add_edge('VBufferRT.vbuffer', 'ReSTIR_FG.vbuffer')
-    g.add_edge('ReSTIR_FG.color', 'AccumulatePass.input')
+    if ENABLE_DISOCCLUSION_OUTPUT:
+        g.add_edge('ReSTIR_FG.disocclusion', 'AccumulatePass.input')  # Profiler: 觀察 disocclusion 像素個數
+    else:
+        g.add_edge('ReSTIR_FG.color', 'AccumulatePass.input')
     g.mark_output('ToneMapper.dst')
-    g.mark_output('AccumulatePass.output')
     return g
 m.addGraph(render_graph_ReSTIR_FG())
 
 # Scene
-m.loadScene('D:/3D_Scene/ReSTIR-FG/VeachAjar/VeachAjar_v1.1.pyscene')
+testcase = "landscape"
+if testcase == "landscape":
+    m.loadScene('D:/3D_Scene/ReSTIR-FG/VeachAjar/VeachAjar_v1.2.pyscene')
+    m.resizeFrameBuffer(1280, 800)
+elif testcase == "portrait":
+    m.loadScene('D:/3D_Scene/ReSTIR-FG/VeachAjar/VeachAjar_v1.3.pyscene')
+    m.resizeFrameBuffer(515, 800)
+elif testcase == "profile":
+    m.loadScene('D:/3D_Scene/ReSTIR-FG/VeachAjar/VeachAjar_v1.2.pyscene')
+    m.resizeFrameBuffer(1000, 800)  # Profiler: 統計 disocclusion 像素個數 vs. 處理耗時，以 1000 為單位便於統計
 m.scene.renderSettings = SceneRenderSettings(useEnvLight=True, useAnalyticLights=True, useEmissiveLights=True, useGridVolumes=True, diffuseAlbedoMultiplier=1)
 m.scene.cameraSpeed = 1.0
 
 # Window Configuration
-m.resizeFrameBuffer(1280, 800)
 m.ui = True
 
 # Clock Settings
@@ -38,8 +61,83 @@ m.clock.framerate = 30
 # m.clock.frame = 0
 
 # Frame Capture
+captureStart = 281
+captureEnd = 324
 m.frameCapture.outputDir = 'D:/Temp/FrameCapture'
 m.frameCapture.baseFilename = 'Mogwai'
+if ENABLE_CAPTURE_FRAME:
+    framecapture.capture_frames(m, captureStart, captureEnd)
+if ENABLE_AUTO_EXIT:
+    m.clock.exitFrame = captureEnd + 5
 
-# framecapture.capture_cameras(m, 30)
-# framecapture.capture_frames(m, 0, 1000)
+# Camera: 打印相機的方位
+if ENABLE_CAMERA_ORIENTATION:
+    m.clock.frame = 0  # 從第 0 幀開始
+    for frame in range(captureEnd+1):
+        m.renderFrame()
+        if m.clock.frame in range(captureStart, captureEnd+1):
+            print(f"INFO: frame #{m.clock.frame}:")
+            print(f"  camera position: {m.scene.camera.position}")
+            print(f"    camera target: {m.scene.camera.target}")
+            print(f"        camera up: {m.scene.camera.up}")
+
+# Profiler: Disocclusion 效能分析
+if ENABLE_PROFILER:
+    frameStart = captureEnd + 10  # 跳過前面 warm up 幀與截圖幀以避免影響分析數據
+    frameEnd = frameStart + 1000  # 統計 1000 幀
+    if ENABLE_AUTO_EXIT:
+        m.clock.exitFrame = frameEnd + 5
+    meanFrameTime = 0
+    meanFrameTimeFrames = 0
+    meanDisocclusionTime = {'tracePath': 0, 'resampling': 0}
+    meanDisocclusionTimeFrames = 0
+    m.clock.frame = 0  # 從第 0 幀開始
+    m.profiler.enabled = True
+    for frame in range(frameEnd):
+        m.renderFrame()
+        # 檢測平均幀時
+        if PROFILE_MEAN_FRAME_TIME:
+            if m.clock.frame in range(frameStart, frameEnd):
+                time = m.profiler.events.get("/onFrameRender/gpu_time", {}).get("value", None)
+                if time is not None:  # 確保數據可用
+                    meanFrameTime += time
+                    meanFrameTimeFrames += 1  # 計算有效幀數
+                else:
+                    print(f"WARNING: frame time not available for frame {m.clock.frame}")
+        # 檢測 Disocclusion 處理時間
+        if PROFILE_DISOCCLUSION_TIME:
+            if m.clock.frame in range(frameStart, frameEnd):  # 跳過前面 10 幀 (warm up 時間可能失真)
+                time1 = m.profiler.events.get("/onFrameRender/RenderGraphExe::execute()/ReSTIR_FG/TracePathGIDisocclusion/gpu_time", {}).get("value", None)
+                time2 = m.profiler.events.get("/onFrameRender/RenderGraphExe::execute()/ReSTIR_FG/SpatiotemporalResamplingDisocclusion/gpu_time", {}).get("value", None)
+                if all(t is not None for t in [time1, time2]):  # 確保所有數據都可用
+                    meanDisocclusionTime['tracePath'] += time1
+                    meanDisocclusionTime['resampling'] += time2
+                    meanDisocclusionTimeFrames += 1  # 計算有效幀數
+                else:
+                    print(f"WARNING: disocclusion time not available for frame {m.clock.frame}")
+        # 檢測單幀
+        if PROFILE_SINGLE_FRAME:
+            if m.clock.frame in range(captureStart-5, captureEnd+5):
+                # frame time = time1
+                time1 = m.profiler.events["/onFrameRender/gpu_time"]["value"]
+                # disocclusion time = trace path time (time2) + resampling time (time3)
+                time2 = m.profiler.events["/onFrameRender/RenderGraphExe::execute()/ReSTIR_FG/TracePathGIDisocclusion/gpu_time"]["value"]
+                time3 = m.profiler.events["/onFrameRender/RenderGraphExe::execute()/ReSTIR_FG/SpatiotemporalResamplingDisocclusion/gpu_time"]["value"]
+                print(f"INFO: frame #{m.clock.frame}: {time1:.2f} ms, {(time2+time3):.2f} ms ({time2:.2f} + {time3:.2f})", flush=True)
+    m.profiler.enabled = False
+    # 顯示平均幀時
+    if PROFILE_MEAN_FRAME_TIME:
+        if meanFrameTimeFrames > 0:
+            meanFrameTime /= meanFrameTimeFrames
+            print(f"INFO: mean frame time for {meanFrameTimeFrames} frames: {meanFrameTime:.2f} ms")
+        else:
+            print("WARNING: no valid frame times captured.")
+    # 顯示 Disocclusion 處理時間: (disocclusion time) = (trace path time) + (resampling time)
+    if PROFILE_DISOCCLUSION_TIME:
+        if meanDisocclusionTimeFrames > 0:
+            meanDisocclusionTime['tracePath'] /= meanDisocclusionTimeFrames
+            meanDisocclusionTime['resampling'] /= meanDisocclusionTimeFrames
+            totalTime = meanDisocclusionTime['tracePath'] + meanDisocclusionTime['resampling']
+            print(f"INFO: mean disocclusion time for {meanDisocclusionTimeFrames} frames: {totalTime:.2f} ms ({meanDisocclusionTime['tracePath']:.2f} + {meanDisocclusionTime['resampling']:.2f})")
+        else:
+            print("WARNING: no valid disocclusion times captured.")
