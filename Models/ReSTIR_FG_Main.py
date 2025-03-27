@@ -2,6 +2,7 @@ import os
 
 file_name = "ReSTIR_FG_Kitchen.py"
 # file_name = "ReSTIR_FG_VeachAjar.py"
+# file_name = "ReSTIR_FG_Staircase.py"
 # file_name = "ReSTIR_FG_PinkRoom.py"
 # file_name = "..\\scripts\\PathTracer.py"
 

@@ -9,16 +9,20 @@ import framecapture
 
 ENABLE_CAPTURE_FRAME = True
 ENABLE_DISOCCLUSION_OUTPUT = False
-ENABLE_AUTO_EXIT = True
+ENABLE_AUTO_EXIT = False
 ENABLE_PROFILER = False
 PROFILE_MEAN_FRAME_TIME = True
 PROFILE_DISOCCLUSION_TIME = False
 PROFILE_SINGLE_FRAME = False
 ENABLE_CAMERA_ORIENTATION = False
+DISOCCLUSION_TESTCASE = 1
 
 # 檢測單幀數據時，關閉截圖以避免影響分析數據
 if ENABLE_PROFILER and PROFILE_SINGLE_FRAME:
     ENABLE_CAPTURE_FRAME = False
+
+# 使用環境變數傳遞參數到 pyscene 文件
+os.environ['DISOCCLUSION_TESTCASE'] = str(DISOCCLUSION_TESTCASE)
 
 def render_graph_ReSTIR_FG():
     g = RenderGraph('ReSTIR_FG')
@@ -38,20 +42,12 @@ def render_graph_ReSTIR_FG():
 m.addGraph(render_graph_ReSTIR_FG())
 
 # Scene
-testcase = "landscape"
-if testcase == "landscape":
-    m.loadScene('D:/3D_Scene/ReSTIR-FG/VeachAjar/VeachAjar_v1.2.pyscene')
-    m.resizeFrameBuffer(1280, 800)
-elif testcase == "portrait":
-    m.loadScene('D:/3D_Scene/ReSTIR-FG/VeachAjar/VeachAjar_v1.3.pyscene')
-    m.resizeFrameBuffer(515, 800)
-elif testcase == "profile":
-    m.loadScene('D:/3D_Scene/ReSTIR-FG/VeachAjar/VeachAjar_v1.2.pyscene')
-    m.resizeFrameBuffer(1000, 800)  # Profiler: 統計 disocclusion 像素個數 vs. 處理耗時，以 1000 為單位便於統計
+m.loadScene('D:/3D_Scene/ReSTIR-FG/VeachAjar/VeachAjar_Disocclusion_v1.4.pyscene')
 m.scene.renderSettings = SceneRenderSettings(useEnvLight=True, useAnalyticLights=True, useEmissiveLights=True, useGridVolumes=True, diffuseAlbedoMultiplier=1)
 m.scene.cameraSpeed = 1.0
 
 # Window Configuration
+m.resizeFrameBuffer(1280, 800)
 m.ui = True
 
 # Clock Settings
@@ -61,8 +57,16 @@ m.clock.framerate = 30
 # m.clock.frame = 0
 
 # Frame Capture
-captureStart = 281
-captureEnd = 324
+if DISOCCLUSION_TESTCASE == 1:
+    m.resizeFrameBuffer(515, 800)
+    captureStart = 281
+    captureEnd = 324
+elif DISOCCLUSION_TESTCASE == 2:
+    captureStart = 130
+    captureEnd = 222
+else:
+    captureStart = 0
+    captureEnd = 500
 m.frameCapture.outputDir = 'D:/Temp/FrameCapture'
 m.frameCapture.baseFilename = 'Mogwai'
 if ENABLE_CAPTURE_FRAME:

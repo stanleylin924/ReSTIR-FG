@@ -42,13 +42,12 @@ def render_graph_ReSTIR_FG():
 m.addGraph(render_graph_ReSTIR_FG())
 
 # Scene
-m.loadScene('D:/3D_Scene/ReSTIR-FG/Kitchen_ReSTIRFG/Kitchen_Disocclusion_v1.4.pyscene')
+m.loadScene('D:/3D_Scene/benedikt-bitterli/pbrt-v4/staircase/Staircase_Disocclusion_v1.1.pyscene')
 m.scene.renderSettings = SceneRenderSettings(useEnvLight=True, useAnalyticLights=True, useEmissiveLights=True, useGridVolumes=True, diffuseAlbedoMultiplier=1)
 m.scene.cameraSpeed = 1.0
 
 # Window Configuration
 m.resizeFrameBuffer(1280, 800)
-# m.resizeFrameBuffer(1000, 800)  # Profiler: 統計 disocclusion 像素個數 vs. 處理耗時，以 1000 為單位便於統計
 m.ui = True
 
 # Clock Settings
@@ -59,26 +58,8 @@ m.clock.framerate = 30
 
 # Frame Capture
 if DISOCCLUSION_TESTCASE == 1:
-    captureStart = 179
-    captureEnd = 229
-elif DISOCCLUSION_TESTCASE == 2:
-    captureStart = 116
-    captureEnd = 153
-elif DISOCCLUSION_TESTCASE == 3:
-    captureStart = 116
-    captureEnd = 150
-elif DISOCCLUSION_TESTCASE == 4:
-    captureStart = 116
-    captureEnd = 144
-elif DISOCCLUSION_TESTCASE == 5:
-    captureStart = 175
-    captureEnd = 265
-    # Pause to animate scene in order to generate reference picture with path tracer
-    if False:
-        for frame in range(captureEnd+1):
-            m.renderFrame()
-            if m.clock.frame == 248:
-                m.clock.pause()
+    captureStart = 146
+    captureEnd = 219
 else:
     captureStart = 0
     captureEnd = 500
