@@ -78,6 +78,11 @@ cbuffer PerFrame
     uint gFrameCount;                   //Current it for sample gen
     float gAttenuationRadius;           //Current global photon radius
     uint2 gFrameDim; //Frame Dimensions for camera dir
+    bool gDisocclusionProcessing;       //Disocclusion processing
+    // Accumulation for disocclusion
+    uint    gDisocclusionAccumCount;
+    bool    gDisocclusionAccumulate;
+    //bool    gMovingAverageMode;
 }
 
 static const float kRayEpsilon = 0.98f;
@@ -116,6 +121,12 @@ void getEmissiveLight(uint idx,in float3 worldPos, out float distance ,out float
 [numthreads(16, 16, 1)]
 void main(uint2 pixel : SV_DispatchThreadID)
 {
+    if (gDisocclusionProcessing && gDisocclusionMask[pixel] == (uint) DisocclusionType::kNone)
+        return;
+
+    if (gDisocclusionProcessing && !gDisocclusionAccumulate)
+        return;
+
     bool valid = true;
     //Load Reflectance (was set before)
     float4 diffuseReflectance = { };
@@ -362,29 +373,57 @@ void main(uint2 pixel : SV_DispatchThreadID)
         }
     }
 
-    if (is_valid(gOutColor)) gOutColor[pixel] = float4(color, 1.f);
-    if (is_valid(gOutEmission)) gOutEmission[pixel] = float4(emission, 1.f);
-    if (is_valid(gOutDiffuseRadiance)) gOutDiffuseRadiance[pixel] = float4(diffuseIllumination, hitT);
-    if (is_valid(gOutSpecularRadiance))gOutSpecularRadiance[pixel] = float4(specularIllumination, hitTSpec);
-    if (is_valid(gOutResidualRadiance))  gOutResidualRadiance[pixel] = float4(0.f); //TODO 
-    if (is_valid(gOutDisocclusion))
+    if (gDisocclusionProcessing)
     {
-        switch (gDisocclusionMask[pixel]) {
-        case DisocclusionType::kInvalid:
-            gOutDisocclusion[pixel] = float4(0.f, 0.f, 1.f, 1.f);  // Blue
-            break;
-        case DisocclusionType::kOutOfFrame:
-            gOutDisocclusion[pixel] = float4(1.f, 1.f, 0.f, 1.f);  // Yellow
-            break;
-        case DisocclusionType::kBadSimilarity:
-            gOutDisocclusion[pixel] = float4(0.f, 1.f, 0.f, 1.f);  // Green
-            break;
-        case DisocclusionType::kProfiler:
-            gOutDisocclusion[pixel] = float4(0.f, 1.f, 1.f, 1.f);  // Cyan
-            break;
-        default:
-            gOutDisocclusion[pixel] = float4(color, 1.f);
-            break;
+        // Accumulate for disocclusion
+        if (is_valid(gOutColor))
+        {
+            // Clear accumulated buffer at the beginning of disocclusion processing.
+            if (gDisocclusionAccumCount == 0)
+                gOutColor[pixel] = float4(0.f);
+
+            // Fetch previous sum and compute the new sum.
+            gOutColor[pixel] += float4(color, 1.f);
+        }
+    }
+    else
+    {
+        if (gDisocclusionAccumulate && gDisocclusionMask[pixel] != (uint) DisocclusionType::kNone)
+        {
+            if (is_valid(gOutColor))
+            {
+                float curWeight = 1.0 / (gDisocclusionAccumCount + 1);
+                float4 sum = gOutColor[pixel] + float4(color, 1.f);
+                gOutColor[pixel] = sum * curWeight;
+            }
+        }
+        else
+        {
+            if (is_valid(gOutColor)) gOutColor[pixel] = float4(color, 1.f);
+        }
+        if (is_valid(gOutEmission)) gOutEmission[pixel] = float4(emission, 1.f);
+        if (is_valid(gOutDiffuseRadiance)) gOutDiffuseRadiance[pixel] = float4(diffuseIllumination, hitT);
+        if (is_valid(gOutSpecularRadiance))gOutSpecularRadiance[pixel] = float4(specularIllumination, hitTSpec);
+        if (is_valid(gOutResidualRadiance))  gOutResidualRadiance[pixel] = float4(0.f); //TODO 
+        if (is_valid(gOutDisocclusion))
+        {
+            switch (gDisocclusionMask[pixel]) {
+            case DisocclusionType::kInvalid:
+                gOutDisocclusion[pixel] = float4(0.f, 0.f, 1.f, 1.f);  // Blue
+                break;
+            case DisocclusionType::kOutOfFrame:
+                gOutDisocclusion[pixel] = float4(1.f, 1.f, 0.f, 1.f);  // Yellow
+                break;
+            case DisocclusionType::kBadSimilarity:
+                gOutDisocclusion[pixel] = float4(0.f, 1.f, 0.f, 1.f);  // Green
+                break;
+            case DisocclusionType::kProfiler:
+                gOutDisocclusion[pixel] = float4(0.f, 1.f, 1.f, 1.f);  // Cyan
+                break;
+            default:
+                gOutDisocclusion[pixel] = float4(color, 1.f);
+                break;
+            }
         }
     }
 }

@@ -160,7 +160,7 @@ private:
 
     /** Final Shading
     */
-    void finalShadingPass(RenderContext* pRenderContext, const RenderData& renderData);
+    void finalShadingPass(RenderContext* pRenderContext, const RenderData& renderData, bool disocclusionProcessing = false);
 
     /** Direct Analytic as an alternative to ReSTIR if the scene only a handful of analytic lights
     */
@@ -301,6 +301,9 @@ private:
     std::unique_ptr<EmissiveLightSampler> mpGIEmissiveLightSampler; // Light Sampler
     LightBVHSampler::Options mGILightBVHOptions;
    
+    // Disocclusion
+    uint mDisocclusionAccumCount = 0;
+    bool mDisocclusionAccumulate = false;
 
     //
     // Buffer and Textures

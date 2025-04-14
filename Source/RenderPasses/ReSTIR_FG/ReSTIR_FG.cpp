@@ -341,10 +341,16 @@ void ReSTIR_FG::execute(RenderContext* pRenderContext, const RenderData& renderD
         causticResamplingPass(pRenderContext, renderData);
 
     //Disocclusion Processing
+    mDisocclusionAccumCount = 0;
     for (int i = 0; i < 6; i++) // 必須迭代偶數次
     {
-        mFrameCount++;
+        if (mDisocclusionAccumulate && i > 3)
+        {
+            finalShadingPass(pRenderContext, renderData, true);
+            mDisocclusionAccumCount++;
+        }
 
+        mFrameCount++;
         if (mRenderMode == RenderMode::ReSTIRGI)
         {
             generateReSTIRGISamples(pRenderContext, renderData, true);
@@ -1862,7 +1868,7 @@ void ReSTIR_FG::causticResamplingPass(RenderContext* pRenderContext, const Rende
      pRenderContext->uavBarrier(mpFGSampelDataBuffer[idxCurr].get());
 }
 
-void ReSTIR_FG::finalShadingPass(RenderContext* pRenderContext, const RenderData& renderData) {
+void ReSTIR_FG::finalShadingPass(RenderContext* pRenderContext, const RenderData& renderData, bool disocclusionProcessing) {
      FALCOR_PROFILE(pRenderContext,"FinalShading");
 
      // Create pass
@@ -1965,6 +1971,10 @@ void ReSTIR_FG::finalShadingPass(RenderContext* pRenderContext, const RenderData
      var[uniformName]["gAttenuationRadius"] = mSampleRadiusAttenuation; // Attenuation radius
      var[uniformName]["gFrameDim"] = renderData.getDefaultTextureDims();
      //var[uniformName]["gEnableCaustics"] = mEnableCausticPhotonCollection;
+     var[uniformName]["gDisocclusionProcessing"] = disocclusionProcessing;
+     // Accumulation for disocclusion
+     var[uniformName]["gDisocclusionAccumCount"] = mDisocclusionAccumCount;
+     var[uniformName]["gDisocclusionAccumulate"] = mDisocclusionAccumulate;
 
      // Execute
      const uint2 targetDim = renderData.getDefaultTextureDims();
