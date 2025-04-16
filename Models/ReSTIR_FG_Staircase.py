@@ -1,7 +1,7 @@
 # Graphs
-from pathlib import WindowsPath, PosixPath
+from pathlib import WindowsPath, PosixPath, Path
 from falcor import *
-import sys
+import sys, shutil
 
 # Add the path of the helper script file to the system path
 sys.path.append('D:/3D_Scene/script')
@@ -63,7 +63,20 @@ if DISOCCLUSION_TESTCASE == 1:
 else:
     captureStart = 0
     captureEnd = 500
-m.frameCapture.outputDir = 'D:/Temp/FrameCapture'
+# 獲取腳本當前所在的路徑
+currentDir = Path(__file__).parent.resolve()
+# 設定 outputDir，向上一層目錄後進入 build/FrameCapture
+outputDir = currentDir / '../build/FrameCapture'
+# 將相對路徑轉換為絕對路徑
+outputDir = outputDir.resolve()
+# print(f"輸出資料夾的路徑是: {outputDir}")
+# 如果資料夾存在，先刪除它
+if outputDir.exists() and outputDir.is_dir():
+    shutil.rmtree(outputDir)
+# 重新建立資料夾
+outputDir.mkdir(parents=True, exist_ok=True)
+# 配置 frameCapture 的 outputDir
+m.frameCapture.outputDir = str(outputDir)
 m.frameCapture.baseFilename = 'Mogwai'
 if ENABLE_CAPTURE_FRAME:
     framecapture.capture_frames(m, captureStart, captureEnd)
