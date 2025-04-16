@@ -67,13 +67,8 @@ elif DISOCCLUSION_TESTCASE == 2:
 else:
     captureStart = 0
     captureEnd = 500
-# 獲取腳本當前所在的路徑
-currentDir = Path(__file__).parent.resolve()
-# 設定 outputDir，向上一層目錄後進入 build/FrameCapture
-outputDir = currentDir / '../build/FrameCapture'
-# 將相對路徑轉換為絕對路徑
-outputDir = outputDir.resolve()
-# print(f"輸出資料夾的路徑是: {outputDir}")
+# 指定輸出資料夾
+outputDir = Path('D:/Temp/FrameCapture')
 # 如果資料夾存在，先刪除它
 if outputDir.exists() and outputDir.is_dir():
     shutil.rmtree(outputDir)
