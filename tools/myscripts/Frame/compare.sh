@@ -1,16 +1,17 @@
 #!/bin/bash
 
-mkdir -p Output  # 確保資料夾存在
+files=("Reference" "ReSTIR-GI" "ReSTIR-FG" "Ours-4-spatial-samples" "Ours-4-spatial-samples-accumulate")  # 定義一個名為 files 的陣列：檔案清單
+
+mkdir -p Output
 
 # 裁剪
-files=("Reference" "ReSTIR-GI" "ReSTIR-FG" "Ours-1-spatial-sample" "Ours-4-spatial-samples")  # 定義一個名為 files 的陣列：檔案清單
 for file in "${files[@]}"; do  # 使用 ${files[@]} 來迭代陣列中的所有元素
-    magick.exe "Input/$file.png" -crop 100x100+640+0 "Output/img1-$file.png"
-    magick.exe "Input/$file.png" -crop 64x64+588+352 "Output/img2-$file.png"
+    magick.exe "$file.png" -crop 100x100+640+0 "Output/img1-$file.png"
+    magick.exe "$file.png" -crop 64x64+588+352 "Output/img2-$file.png"
 done
 
 # 畫框
-magick.exe "Input/Reference.png" -fill none -stroke "rgb(254, 191, 0)" -strokewidth 5 -draw "rectangle 640,0 740,100" "Output/marked-Reference.png"
+magick.exe "Reference.png" -fill none -stroke "rgb(254, 191, 0)" -strokewidth 5 -draw "rectangle 640,0 740,100" "Output/marked-Reference.png"
 magick.exe "Output/marked-Reference.png" -fill none -stroke "rgb(1, 112, 191)" -strokewidth 5 -draw "rectangle 588,352 652,416" "Output/marked-Reference.png"
 
 # 計算 RMSE
