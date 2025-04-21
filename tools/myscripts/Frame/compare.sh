@@ -3,7 +3,7 @@
 mkdir -p Output  # 確保資料夾存在
 
 # 裁剪
-files=("Reference" "ReSTIR-GI" "ReSTIR-PT" "ReSTIR-FG" "Ours")  # 定義一個名為 files 的陣列：檔案清單
+files=("Reference" "ReSTIR-GI" "ReSTIR-FG" "Ours-1-spatial-sample" "Ours-4-spatial-samples")  # 定義一個名為 files 的陣列：檔案清單
 for file in "${files[@]}"; do  # 使用 ${files[@]} 來迭代陣列中的所有元素
     magick.exe "Input/$file.png" -crop 100x100+640+0 "Output/img1-$file.png"
     magick.exe "Input/$file.png" -crop 64x64+588+352 "Output/img2-$file.png"

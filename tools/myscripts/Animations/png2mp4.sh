@@ -2,7 +2,7 @@
 
 mkdir -p output  # 確保資料夾存在
 
-dirs=("ReSTIR-GI" "ReSTIR-PT" "ReSTIR-FG" "Ours")  # 定義一個名為 dirs 的陣列：目錄清單
+dirs=("ReSTIR-GI" "ReSTIR-FG" "Ours-1-spatial-sample" "Ours-4-spatial-samples")  # 定義一個名為 dirs 的陣列：目錄清單
 
 for dir in "${dirs[@]}"  # 使用 ${dirs[@]} 來迭代陣列中的所有元素
 do
