@@ -1,0 +1,5 @@
+1 frame (1280x800)
+ReSTIR-GI: 41.30ms
+ReSTIR-FG: 42.69ms
+Ours-4-spatial-samples: 43.83ms
+Ours-4-spatial-samples-trial:
