@@ -34,3 +34,4 @@
 *.mp4
 *.tlog
 *.bak
+/output.log
