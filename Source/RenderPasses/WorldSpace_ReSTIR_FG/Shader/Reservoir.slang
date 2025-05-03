@@ -3,13 +3,19 @@ struct Reservoir{
     uint M;             // Number of samples. Real number equals generatedSamples * M
     float targetFunc; // Target Pdf of current sample
     float weightSum;    // Weight of the reservoir after finalizing (W in paper). Used as weightSum internaly
-    uint pad;           // Pad for fitting
+    float3 vPos;        // Position of the visible point
+    float3 vNorm;       // Normal of the visible point
+    uint age;           // Age of the sample
+    uint2 pad;          // Pad for fitting
     
     //Empty init
     __init(){
         this = {};
         M = 0;
         weightSum = 0.f;
+        vPos = float3(0);
+        vNorm = float3(0);
+        age = 0;
     }
 
     //Updates reservoir with new light sample. Returns true if the light sample was selected
