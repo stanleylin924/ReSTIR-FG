@@ -876,6 +876,7 @@ void WorldSpace_ReSTIR_FG::prepareBuffers(RenderContext* pRenderContext, const R
         mpViewDirDIPrev.reset();
         mpThpDI.reset();
         mpSampleGenState.reset();
+        mpAppendBuffer.reset();
         mResetTex = false;
     }
 
@@ -1133,6 +1134,15 @@ void WorldSpace_ReSTIR_FG::prepareBuffers(RenderContext* pRenderContext, const R
         mpPhotonCullingMask->setName("WorldSpace_ReSTIR_FG::PhotonCullingMask");
     }
 
+    if (!mpAppendBuffer)
+    {
+        mpAppendBuffer = Buffer::createStructured(
+            mpDevice, mpReflectTypes->getRootVar()["gAppendBuffer"], mScreenRes.x * mScreenRes.y,
+            ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess,
+            Buffer::CpuAccess::None, nullptr, false
+        );
+        mpAppendBuffer->setName("ReSTIR_FG::AppendBuffer");
+    }
 }
 
 void WorldSpace_ReSTIR_FG::prepareAccelerationStructure() {
@@ -1343,6 +1353,7 @@ void WorldSpace_ReSTIR_FG::getFinalGatherHitPass(RenderContext* pRenderContext, 
     var["gSurfaceData"] = mpSurfaceBuffer[mFrameCount % 2];
     var["gFinalGatherHit"] = mpFinalGatherSampleHitData;
     var["gPhotonCullingMask"] = mpPhotonCullingMask;
+    var["gAppendBuffer"] = mpAppendBuffer;
 
     FALCOR_ASSERT(mScreenRes.x > 0 && mScreenRes.y > 0);
 

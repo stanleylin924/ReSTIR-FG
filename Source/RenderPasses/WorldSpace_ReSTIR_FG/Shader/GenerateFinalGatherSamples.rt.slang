@@ -17,6 +17,7 @@ import Reservoir;
 import FinalGatherData;
 import SurfaceDataFG;
 import Hash;
+import HashBuildStructure;
 
 cbuffer PerFrame
 {
@@ -44,6 +45,7 @@ RWStructuredBuffer<SampleGenerator> gSampleGenState;
 RWStructuredBuffer<PackedSurfaceDataFG> gSurfaceData;
 RWTexture2D<PackedHitInfo> gFinalGatherHit;
 RWTexture2D<uint> gPhotonCullingMask;
+RWStructuredBuffer<HashAppendData> gAppendBuffer;
 
 //Outputs
 RWStructuredBuffer<Reservoir> gReservoir;
