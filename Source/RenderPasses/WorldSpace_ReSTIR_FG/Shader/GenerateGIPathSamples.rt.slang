@@ -41,11 +41,7 @@ RWStructuredBuffer<SampleGenerator> gSampleGenState;
 RWStructuredBuffer<FGData> gGISample;
 
 //Outputs
-#if USE_REDUCED_RESERVOIR_FORMAT
-    RWTexture2D<uint2> gReservoir;
-#else
-    RWTexture2D<uint4> gReservoir;
-#endif
+RWStructuredBuffer<Reservoir> gReservoir;
 
 EmissiveLightSampler gEmissiveSampler; ///< Emissive light sampler. Only valid when kUseEmissiveLights == true.
 
@@ -442,10 +438,5 @@ void rayGen()
 
     gGISample[index2Dto1D(launchIndex, launchDim.x)] = giData;
     gSurfaceData[index2Dto1D(launchIndex, launchDim.x)] = surface.pack();
-
-    #if USE_REDUCED_RESERVOIR_FORMAT
-        gReservoir[launchIndex] = reservoir.packReduced();
-    #else
-        gReservoir[launchIndex] = reservoir.pack();
-    #endif
+    gReservoir[index2Dto1D(launchIndex, launchDim.x)] = reservoir;
 }

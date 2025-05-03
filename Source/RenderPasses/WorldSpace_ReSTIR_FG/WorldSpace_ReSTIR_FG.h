@@ -224,7 +224,6 @@ private:
     float mPhotonAnalyticRatio = 0.5f;                              //Analytic photon distribution ratio in a mixed light case. E.g. 0.3 -> 30% analytic, 70% emissive
 
     //Reservoir
-    bool mUseReducedReservoirFormat = false;                        //Use a reduced reservoir format
     bool mRebuildReservoirBuffer = false;                           //Rebuild the reservoir buffer
     bool mClearReservoir = true;                                    //Clears both reservoirs
     float mSampleRadiusAttenuation = 0.00f;                         //Radius for the better defined attenuation
@@ -307,7 +306,7 @@ private:
     //
     ref<Texture> mpFinalGatherSampleHitData;    //V-Buffer of the Final Gather sample hits
     ref<Buffer> mpFGSampelDataBuffer[2]; // Per pixel final gather sample information
-    ref<Texture> mpReservoirBuffer[2];  // Buffers for the reservoir
+    ref<Buffer> mpReservoirBuffer[2];  // Buffers for the reservoir
     ref<Buffer> mpSurfaceBuffer[2];     // Buffer for surface data
     ref<Buffer> mpPhotonAABB[2];        // Photon AABBs for Acceleration Structure building
     ref<Buffer> mpPhotonData[2];        // Additional Photon data (flux, dir)
@@ -321,9 +320,9 @@ private:
     ref<Texture> mpRayDist;             //Ray distance (needed for highly specular and transparent materials)
     ref<Texture> mpThp;                 //Throughput
     ref<Texture> mpTemporalCausticSurface[2];   //Small buffer for surface rejection of temporal samples
-    ref<Texture> mpCausticReservoir[2];
+    ref<Buffer> mpCausticReservoir[2];
     ref<Buffer> mpCausticSample[2];
-    ref<Texture> mpDirectFGReservoir[2];
+    ref<Buffer> mpDirectFGReservoir[2];
     ref<Buffer> mpDirectFGSample[2];
     ref<Buffer> mpSampleGenState;       //SampleGeneratorState
 
@@ -364,6 +363,7 @@ private:
     RayTraceProgramHelper mGeneratePhotonPass;
     RayTraceProgramHelper mCollectPhotonPass;
 
+    ref<ComputePass> mpReflectTypes;                    // Helper Pass for reflecting type information
     ref<ComputePass> mpResamplingPass;                  // Resampling Pass for all resampling modes
     ref<ComputePass> mpCausticResamplingPass;           // Resampling Pass for Caustics
     ref<ComputePass> mpFinalShadingPass;                // Final Shading Pass

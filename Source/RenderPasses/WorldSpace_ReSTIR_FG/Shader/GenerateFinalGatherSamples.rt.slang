@@ -46,11 +46,7 @@ RWTexture2D<PackedHitInfo> gFinalGatherHit;
 RWTexture2D<uint> gPhotonCullingMask;
 
 //Outputs
-#if USE_REDUCED_RESERVOIR_FORMAT
-    RWTexture2D<uint2> gReservoir;
-#else
-    RWTexture2D<uint4> gReservoir;
-#endif
+RWStructuredBuffer<Reservoir> gReservoir;
 
 static const bool kUsePhotonCulling = USE_PHOTON_CULLING;
 static const bool kUseCausticPhotons = USE_CAUSTIC_CULLING; 
@@ -239,10 +235,5 @@ void rayGen()
         gSampleGenState[index2Dto1D(launchIndex, launchDim.x)] = sg;
     #endif //STORE_SAMPLE_GEN_STATE
 
-
-    #if USE_REDUCED_RESERVOIR_FORMAT
-        gReservoir[launchIndex] = reservoir.packReduced();
-    #else
-        gReservoir[launchIndex] = reservoir.pack();
-    #endif
+    gReservoir[index2Dto1D(launchIndex, launchDim.x)] = reservoir;
 }

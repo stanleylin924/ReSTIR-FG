@@ -15,13 +15,8 @@ import Reservoir;
 import SurfaceDataFG;
 import FinalGatherData;
 
-#if USE_REDUCED_RESERVOIR_FORMAT
-    RWTexture2D<uint2> gReservoir;
-    Texture2D<uint2> gReservoirPrev;
-#else
-    RWTexture2D<uint4> gReservoir;
-    Texture2D<uint4> gReservoirPrev;
-#endif
+RWStructuredBuffer<Reservoir> gReservoir;
+StructuredBuffer<Reservoir> gReservoirPrev;
 
 RWStructuredBuffer<FGData> gFGSampleData;
 StructuredBuffer<FGData> gFGSampleDataPrev;
@@ -162,7 +157,7 @@ void temporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reservoir r
     //If temporal surface was found, resample the previous sample
     if (foundTemporalSurface)
     {
-        Reservoir prev = Reservoir(gReservoirPrev[idx]);
+        Reservoir prev = gReservoirPrev[index2Dto1D(idx, gFrameDim.x)];
         prev.M = min(prev.M, historyLimit);
         previousM = prev.M;
 
@@ -265,7 +260,7 @@ void spatialResampling(uint2 pixel, inout SampleGenerator sg, inout Reservoir r,
             continue;
 
         //Neighbor passed the test, start resampling
-        Reservoir sampledReservoir = Reservoir(gReservoirPrev[idx]);    //Current reservoir is stored in prev
+        Reservoir sampledReservoir = gReservoirPrev[index2Dto1D(idx, gFrameDim.x)];    //Current reservoir is stored in prev
         
         bool sampleValid = true;
         FGData fgNeigh = gFGSampleDataPrev[index2Dto1D(idx, gFrameDim.x)];
@@ -455,7 +450,7 @@ void spatiotemporalResampling(uint2 pixel, inout SampleGenerator sg, inout Reser
         }
             
         //If neighbor surface has passed the tests get reservoir and compair them
-        Reservoir sampledReservoir = Reservoir(gReservoirPrev[idx]);
+        Reservoir sampledReservoir = gReservoirPrev[index2Dto1D(idx, gFrameDim.x)];
         sampledReservoir.M = min(sampledReservoir.M, historyLimit);
 
         FGData fgPrev = gFGSampleDataPrev[index2Dto1D(idx, gFrameDim.x)];
@@ -575,13 +570,13 @@ void main(uint2 dTid : SV_DispatchThreadID)
 
     //Load current reservoir in 
 #if MODE_SPATIAL
-    Reservoir current = Reservoir(gReservoirPrev[dTid]);
+    Reservoir current = gReservoirPrev[index2Dto1D(dTid, gFrameDim.x)];
     if (current.weightSum > 0)
     {
         fgData = gFGSampleDataPrev[index2Dto1D(dTid, gFrameDim.x)];
     }
 #else //Mode Temporal or Spatiotemporal
-    Reservoir current = Reservoir(gReservoir[dTid]);
+    Reservoir current = gReservoir[index2Dto1D(dTid, gFrameDim.x)];
     if (current.weightSum > 0)
     {
         fgData = gFGSampleData[index2Dto1D(dTid, gFrameDim.x)];
@@ -599,11 +594,7 @@ void main(uint2 dTid : SV_DispatchThreadID)
 #endif //Resampling Mode
     
     //Store reservoir and sample data    
-#if USE_REDUCED_RESERVOIR_FORMAT
-    gReservoir[dTid] = r.packReduced();
-#else
-    gReservoir[dTid] = r.pack();
-#endif
+    gReservoir[index2Dto1D(dTid, gFrameDim.x)] = r;
 
     gFGSampleData[index2Dto1D(dTid, gFrameDim.x)] = fgData;
 

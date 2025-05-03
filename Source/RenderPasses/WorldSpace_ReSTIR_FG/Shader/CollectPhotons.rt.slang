@@ -63,9 +63,9 @@ Texture2D<float4> gThp; //Thp for caustic and final gathering
 
 //Caustic Filter
 StructuredBuffer<PackedSurfaceDataFG> gSurface;
-RWTexture2D<uint4> gCausticReservoir;
+RWStructuredBuffer<Reservoir> gCausticReservoir;
 RWStructuredBuffer<CausticSample> gCausticSample;
-RWTexture2D<uint4> gDirectFGReservoir;
+RWStructuredBuffer<Reservoir> gDirectFGReservoir;
 RWStructuredBuffer<CausticSample> gDirectFGSample;
 
 //Inputs Temporal Caustic Filter (can be null)
@@ -81,11 +81,7 @@ RWStructuredBuffer<FGData> gFGSampleData;
 RWTexture2D<float4> gCausticOut;
 
 
-#if USE_REDUCED_RESERVOIR_FORMAT
-    RWTexture2D<uint2> gReservoir;
-#else
-    RWTexture2D<uint4> gReservoir;
-#endif
+RWStructuredBuffer<Reservoir> gReservoir;
 
 
 //Acceleration Structure
@@ -523,7 +519,7 @@ void causticPhotonCollection(in ShadingData sd, inout RayData rayData, bool coll
         }
 
         gCausticSample[index2Dto1D(launchIndex, launchDim.x)] = currSample;
-        gCausticReservoir[launchIndex] = rayDataRes.r.pack();
+        gCausticReservoir[index2Dto1D(launchIndex, launchDim.x)] = rayDataRes.r;
         #if RESERVOIR_PHOTON_DIRECT
             currSample = {};
             if (rayDataResDirect.idx >= 0) {
@@ -534,7 +530,7 @@ void causticPhotonCollection(in ShadingData sd, inout RayData rayData, bool coll
                 currSample.dir = pd.dir;
             }
             gDirectFGSample[index2Dto1D(launchIndex, launchDim.x)] = currSample;
-            gDirectFGReservoir[launchIndex] = rayDataResDirect.r.pack();
+            gDirectFGReservoir[index2Dto1D(launchIndex, launchDim.x)] = rayDataResDirect.r;
         #else
             gCausticOut[launchIndex] = float4((directRadiance), 1.f);
         #endif
@@ -608,7 +604,7 @@ void fgSampleCollection(float3 genPosW, inout RayData rayData, bool valid){
     //Store ReSTIR Sample
  
     //Init reservoir
-    Reservoir r = Reservoir(gReservoir[launchIndex]);
+    Reservoir r = gReservoir[index2Dto1D(launchIndex, launchDim.x)];
     r.M = 1; //set M to the right value
 
     float Li = luminance(fgRadiance);
@@ -631,11 +627,7 @@ void fgSampleCollection(float3 genPosW, inout RayData rayData, bool valid){
         r.weightSum = 0.f;
     }
 
-    #if USE_REDUCED_RESERVOIR_FORMAT
-        gReservoir[launchIndex] = r.packReduced();
-    #else  //USE_REDUCED_RESERVOIR_FORMAT
-        gReservoir[launchIndex] = r.pack();
-    #endif //USE_REDUCED_RESERVOIR_FORMAT
+    gReservoir[index2Dto1D(launchIndex, launchDim.x)] = r;
 
     gFGSampleData[index2Dto1D(launchIndex, launchDim.x)] = fgData;
 }

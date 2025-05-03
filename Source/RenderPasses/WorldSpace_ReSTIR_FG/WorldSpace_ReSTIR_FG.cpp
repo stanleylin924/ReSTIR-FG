@@ -31,6 +31,7 @@
 
 namespace
 {
+    const std::string kReflectTypesShader = "RenderPasses/WorldSpace_ReSTIR_FG/Shader/ReflectTypes.cs.slang";
     const std::string kTraceTransmissionDeltaShader = "RenderPasses/WorldSpace_ReSTIR_FG/Shader/TraceTransmissionDelta.rt.slang";
     const std::string kFinalGatherSamplesShader = "RenderPasses/WorldSpace_ReSTIR_FG/Shader/GenerateFinalGatherSamples.rt.slang";
     const std::string kReSTIRGISampleShader = "RenderPasses/WorldSpace_ReSTIR_FG/Shader/GenerateGIPathSamples.rt.slang";
@@ -154,6 +155,8 @@ WorldSpace_ReSTIR_FG::WorldSpace_ReSTIR_FG(ref<Device> pDevice, const Properties
 
     // Create sample generator.
     mpSampleGenerator = SampleGenerator::create(mpDevice, SAMPLE_GENERATOR_UNIFORM);
+
+    mpReflectTypes = ComputePass::create(mpDevice, kReflectTypesShader);
 }
 
 void WorldSpace_ReSTIR_FG::parseProperties(const Properties& props)
@@ -652,12 +655,6 @@ void WorldSpace_ReSTIR_FG::renderUI(Gui::Widgets& widget)
                 group2.tooltip("Pixel radius for the Spatial Samples");
             }
 
-            mRebuildReservoirBuffer |= group.checkbox("Use reduced Reservoir format", mUseReducedReservoirFormat);
-            group.tooltip(
-                "If enabled uses RG32_UINT instead of RGBA32_UINT. In reduced format the targetFunc and M only have 16 bits while the "
-                "weight still has full precision"
-            );
-
             mClearReservoir = group.button("Clear Reservoirs");
             group.tooltip("Clears the reservoirs");
         }
@@ -913,16 +910,18 @@ void WorldSpace_ReSTIR_FG::prepareBuffers(RenderContext* pRenderContext, const R
     //Per pixel Buffers/Textures
     for (uint i = 0; i < 2; i++){
         if (!mpReservoirBuffer[i]){
-            mpReservoirBuffer[i] = Texture::create2D(mpDevice, mScreenRes.x, mScreenRes.y, mUseReducedReservoirFormat ? ResourceFormat::RG32Uint : ResourceFormat::RGBA32Uint, 
-                                                     1u, 1u, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess);
+            mpReservoirBuffer[i] = Buffer::createStructured(
+                mpDevice, mpReflectTypes->getRootVar()["gReservoir"], mScreenRes.x * mScreenRes.y,
+                ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess, Buffer::CpuAccess::None, nullptr, false
+            );
             mpReservoirBuffer[i]->setName("WorldSpace_ReSTIR_FG::Reservoir" + std::to_string(i));
         }
 
         if (!mpCausticReservoir[i] && mCausticCollectMode == CausticCollectionMode::Reservoir)
         {
-            mpCausticReservoir[i] = Texture::create2D(
-                mpDevice, mScreenRes.x, mScreenRes.y, mUseReducedReservoirFormat ? ResourceFormat::RG32Uint : ResourceFormat::RGBA32Uint,
-                1u, 1u, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
+            mpCausticReservoir[i] = Buffer::createStructured(
+                mpDevice, mpReflectTypes->getRootVar()["gCausticReservoir"], mScreenRes.x * mScreenRes.y,
+                ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess, Buffer::CpuAccess::None, nullptr, false
             );
             mpCausticReservoir[i]->setName("WorldSpace_ReSTIR_FG::CausticReservoir" + std::to_string(i));
 
@@ -949,10 +948,10 @@ void WorldSpace_ReSTIR_FG::prepareBuffers(RenderContext* pRenderContext, const R
 
          if (!mpDirectFGReservoir[i] && mCausticCollectMode == CausticCollectionMode::Reservoir && mCausticResamplingForFGDirect)
         {
-            mpDirectFGReservoir[i] = Texture::create2D(
-                mpDevice, mScreenRes.x, mScreenRes.y, mUseReducedReservoirFormat ? ResourceFormat::RG32Uint : ResourceFormat::RGBA32Uint,
-                1u, 1u, nullptr, ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess
-            );
+             mpDirectFGReservoir[i] = Buffer::createStructured(
+                mpDevice, mpReflectTypes->getRootVar()["gDirectFGReservoir"], mScreenRes.x * mScreenRes.y,
+                 ResourceBindFlags::ShaderResource | ResourceBindFlags::UnorderedAccess, Buffer::CpuAccess::None, nullptr, false
+             );
             mpDirectFGReservoir[i]->setName("WorldSpace_ReSTIR_FG::CausticReservoir" + std::to_string(i));
 
             pRenderContext->clearUAV(mpDirectFGReservoir[i]->getUAV().get(), uint4(0));
@@ -1260,7 +1259,6 @@ void WorldSpace_ReSTIR_FG::traceTransmissiveDelta(RenderContext* pRenderContext,
 void WorldSpace_ReSTIR_FG::generateReSTIRGISamples(RenderContext* pRenderContext, const RenderData& renderData) {
     FALCOR_PROFILE(pRenderContext, "TracePathGI");
 
-    mReSTIRGISamplePass.pProgram->addDefine("USE_REDUCED_RESERVOIR_FORMAT", mUseReducedReservoirFormat ? "1" : "0");
     mReSTIRGISamplePass.pProgram->addDefine("USE_RTXDI", mpRTXDI ? "1" : "0");
     mReSTIRGISamplePass.pProgram->addDefine("GI_USE_NEE", mGINEE ? "1" : "0");
     mReSTIRGISamplePass.pProgram->addDefine("GI_USE_ANALYTIC", mpScene && mpScene->useAnalyticLights() ? "1" : "0");
@@ -1312,7 +1310,6 @@ void WorldSpace_ReSTIR_FG::getFinalGatherHitPass(RenderContext* pRenderContext, 
     }
 
     mFinalGatherSamplePass.pProgram->addDefine("USE_PHOTON_CULLING", mUsePhotonCulling ? "1" : "0");
-    mFinalGatherSamplePass.pProgram->addDefine("USE_REDUCED_RESERVOIR_FORMAT", mUseReducedReservoirFormat ? "1" : "0");
     mFinalGatherSamplePass.pProgram->addDefine("USE_CAUSTIC_CULLING", (mCausticCollectMode != CausticCollectionMode::None) && mUseCausticCulling ? "1" : "0");
     mFinalGatherSamplePass.pProgram->addDefines(getMaterialDefines());
         
@@ -1517,7 +1514,6 @@ void WorldSpace_ReSTIR_FG::collectPhotons(RenderContext* pRenderContext, const R
      FALCOR_PROFILE(pRenderContext, "CollectPhotons");
 
      //Defines
-     mCollectPhotonPass.pProgram->addDefine("USE_REDUCED_RESERVOIR_FORMAT", mUseReducedReservoirFormat ? "1" : "0");
      mCollectPhotonPass.pProgram->addDefine("CAUSTIC_COLLECTION_MODE", std::to_string((uint)mCausticCollectMode));
      mCollectPhotonPass.pProgram->addDefine("CAUSTIC_COLLECTION_INDIRECT", mUseCausticsForIndirectLight ? "1" : "0");
      mCollectPhotonPass.pProgram->addDefine("REJECT_FGSAMPLE_DIFFUSE_SURFACE", (mGenerationDeltaRejectionRequireDiffPart && mTraceRequireDiffuseMat) ? "1" : "0");
@@ -1660,7 +1656,6 @@ void WorldSpace_ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const R
         DefineList defines;
         defines.add(mpScene->getSceneDefines());
         defines.add(mpSampleGenerator->getDefines());
-        defines.add("USE_REDUCED_RESERVOIR_FORMAT", mUseReducedReservoirFormat ? "1" : "0");
         defines.add("MODE_SPATIOTEMPORAL", mResamplingMode == ResamplingMode::SpartioTemporal ? "1" : "0");
         defines.add("MODE_TEMPORAL", mResamplingMode == ResamplingMode::Temporal ? "1" : "0");
         defines.add("MODE_SPATIAL", mResamplingMode == ResamplingMode::Spatial ? "1" : "0");
@@ -1677,7 +1672,6 @@ void WorldSpace_ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const R
      mpResamplingPass->getProgram()->addDefine("MODE_TEMPORAL", mResamplingMode == ResamplingMode::Temporal ? "1" : "0");
      mpResamplingPass->getProgram()->addDefine("MODE_SPATIAL", mResamplingMode == ResamplingMode::Spatial ? "1" : "0");
      mpResamplingPass->getProgram()->addDefine("BIAS_CORRECTION_MODE", std::to_string((uint)mBiasCorrectionMode));
-     mpResamplingPass->getProgram()->addDefine("USE_REDUCED_RESERVOIR_FORMAT" ,mUseReducedReservoirFormat ? "1" : "0");
      mpResamplingPass->getProgram()->addDefines(getMaterialDefines());
      
     // Set variables
@@ -1752,7 +1746,6 @@ void WorldSpace_ReSTIR_FG::causticResamplingPass(RenderContext* pRenderContext, 
         DefineList defines;
         defines.add(mpScene->getSceneDefines());
         defines.add(mpSampleGenerator->getDefines());
-        defines.add("USE_REDUCED_RESERVOIR_FORMAT", mUseReducedReservoirFormat ? "1" : "0");
         defines.add("MODE_SPATIOTEMPORAL", mCausticResamplingMode == ResamplingMode::SpartioTemporal ? "1" : "0");
         defines.add("MODE_TEMPORAL", mCausticResamplingMode == ResamplingMode::Temporal ? "1" : "0");
         defines.add("RESERVOIR_PHOTON_DIRECT", mCausticResamplingForFGDirect ? "1" : "0");
@@ -1766,7 +1759,6 @@ void WorldSpace_ReSTIR_FG::causticResamplingPass(RenderContext* pRenderContext, 
      // If defines change, refresh the program
      mpCausticResamplingPass->getProgram()->addDefine("MODE_SPATIOTEMPORAL", mCausticResamplingMode == ResamplingMode::SpartioTemporal ? "1" : "0");
      mpCausticResamplingPass->getProgram()->addDefine("MODE_TEMPORAL", mCausticResamplingMode == ResamplingMode::Temporal ? "1" : "0");
-     mpCausticResamplingPass->getProgram()->addDefine("USE_REDUCED_RESERVOIR_FORMAT", mUseReducedReservoirFormat ? "1" : "0");
      mpCausticResamplingPass->getProgram()-> addDefine("RESERVOIR_PHOTON_DIRECT", mCausticResamplingForFGDirect ? "1" : "0");
      mpCausticResamplingPass->getProgram()->addDefines(getMaterialDefines());
 
@@ -1846,7 +1838,6 @@ void WorldSpace_ReSTIR_FG::finalShadingPass(RenderContext* pRenderContext, const
         defines.add(mpSampleGenerator->getDefines());
         defines.add(getValidResourceDefines(kOutputChannels, renderData));
         defines.add(getValidResourceDefines(kInputChannels, renderData));
-        defines.add("USE_REDUCED_RESERVOIR_FORMAT", mUseReducedReservoirFormat ? "1" : "0");
         defines.add("USE_ENV_BACKROUND", mpScene->useEnvBackground() ? "1" : "0");
         defines.add(
             "EMISSION_TO_CAUSTIC_FILTER", (mCausticCollectMode == CausticCollectionMode::Temporal && mEmissionToCausticFilter) ? "1" : "0"
@@ -1865,7 +1856,6 @@ void WorldSpace_ReSTIR_FG::finalShadingPass(RenderContext* pRenderContext, const
      if (mpRTXDI) mpFinalShadingPass->getProgram()->addDefines(mpRTXDI->getDefines()); 
      mpFinalShadingPass->getProgram()->addDefine("USE_RTXDI", mpRTXDI ? "1" : "0");
      mpFinalShadingPass->getProgram()->addDefine("USE_RESTIR_GI", mRenderMode == RenderMode::ReSTIRGI ? "1" : "0");
-     mpFinalShadingPass->getProgram()->addDefine("USE_REDUCED_RESERVOIR_FORMAT", mUseReducedReservoirFormat ? "1" : "0");
      mpFinalShadingPass->getProgram()->addDefine("USE_ENV_BACKROUND", mpScene->useEnvBackground() ? "1" : "0");
      mpFinalShadingPass->getProgram()->addDefine("EMISSION_TO_CAUSTIC_FILTER", (mCausticCollectMode == CausticCollectionMode::Temporal && mEmissionToCausticFilter) ? "1" : "0");
      mpFinalShadingPass->getProgram()->addDefine("USE_CAUSTIC_FILTER_RESERVOIR", mCausticCollectMode == CausticCollectionMode::Reservoir ? "1" : "0");

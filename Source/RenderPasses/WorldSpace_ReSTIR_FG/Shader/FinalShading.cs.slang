@@ -25,11 +25,7 @@ import FinalGatherData;
 #define USE_CAUSTIC_FILTER_RESERVOIR 1
 #endif
 
-#if USE_REDUCED_RESERVOIR_FORMAT
-    RWTexture2D<uint2> gReservoir;
-#else
-    RWTexture2D<uint4> gReservoir;
-#endif
+RWStructuredBuffer<Reservoir> gReservoir;
 
 
 StructuredBuffer<FGData> gFGSampleData;
@@ -60,13 +56,8 @@ RWTexture2D<float4> gViewPrev;
 // Caustic Reservoir (optinal)
 StructuredBuffer<CausticSample> gCausticSample;
 StructuredBuffer<CausticSample> gDirectFGSample;
-#if USE_REDUCED_RESERVOIR_FORMAT
-Texture2D<uint2> gCausticReservoir;
-Texture2D<uint2> gDirectFGReservoir;
-#else
-Texture2D<uint4> gCausticReservoir;
-Texture2D<uint4> gDirectFGReservoir;
-#endif
+RWStructuredBuffer<Reservoir> gCausticReservoir;
+RWStructuredBuffer<Reservoir> gDirectFGReservoir;
 
 #define is_valid(name) (is_valid_##name != 0)
 
@@ -223,7 +214,7 @@ void main(uint2 pixel : SV_DispatchThreadID)
 
         //Get reservoir
         bool validIndirectReservoir = true;
-        Reservoir r = Reservoir(gReservoir[pixel]);
+        Reservoir r = gReservoir[index2Dto1D(pixel, gFrameDim.x)];
     
         if (r.weightSum < 0 || r.M == 0)
         {
@@ -250,7 +241,7 @@ void main(uint2 pixel : SV_DispatchThreadID)
             if (!validIndirectReservoir) {
                 r.weightSum = 0;
                 r.M = 0;
-                gReservoir[pixel] = r.pack();
+                gReservoir[index2Dto1D(pixel, gFrameDim.x)] = r;
             }
         #endif
         
@@ -291,7 +282,7 @@ void main(uint2 pixel : SV_DispatchThreadID)
                 caustic += gCausticRadiance[pixel].xyz * thp;
             #endif
             #if USE_CAUSTIC_FILTER_RESERVOIR
-                Reservoir causticReservoir = Reservoir(gCausticReservoir[pixel]);
+                Reservoir causticReservoir = gCausticReservoir[index2Dto1D(pixel, gFrameDim.x)];
                 float3 causticReservoirRadianceDiffuse = float3(0.0);
                 float3 causticResRadianceSpec = float3(0.0);
                 if (causticReservoir.M > 0) {
@@ -308,7 +299,7 @@ void main(uint2 pixel : SV_DispatchThreadID)
                     }
                 }
                 #if RESERVOIR_PHOTON_DIRECT
-                    causticReservoir = Reservoir(gDirectFGReservoir[pixel]);
+                    causticReservoir = gDirectFGReservoir[index2Dto1D(pixel, gFrameDim.x)];
                     if (causticReservoir.M > 0) {
                         CausticSample causticSample = gDirectFGSample[index2Dto1D(pixel, gFrameDim.x)];
                         float NdotL = dot(bsdfProperties.guideNormal, causticSample.dir);
