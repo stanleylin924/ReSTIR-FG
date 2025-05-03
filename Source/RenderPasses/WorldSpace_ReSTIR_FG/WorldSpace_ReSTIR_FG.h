@@ -153,6 +153,10 @@ private:
      */
     void collectPhotonsSplit(RenderContext* pRenderContext, const RenderData& renderData, ShaderVar& var, std::string profileName, bool fg);
 
+    /** Building hash grid pass
+     */
+    void buildHashGridPass(RenderContext* pRenderContext, const RenderData& renderData);
+
     /** Resampling pass, which resamples the generated sampled based on the resampling mode
     */
     void resamplingPass(RenderContext* pRenderContext, const RenderData& renderData);
@@ -377,6 +381,7 @@ private:
     RayTraceProgramHelper mGeneratePhotonPass;
     RayTraceProgramHelper mCollectPhotonPass;
 
+    ref<ComputePass> mpBuildHashGridPass;               // Build Hash Grid Pass
     ref<ComputePass> mpReflectTypes;                    // Helper Pass for reflecting type information
     ref<ComputePass> mpResamplingPass;                  // Resampling Pass for all resampling modes
     ref<ComputePass> mpCausticResamplingPass;           // Resampling Pass for Caustics
