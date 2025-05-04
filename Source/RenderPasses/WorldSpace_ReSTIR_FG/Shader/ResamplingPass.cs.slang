@@ -14,6 +14,8 @@ import Utils.Color.ColorHelpers;
 import Reservoir;
 import SurfaceDataFG;
 import FinalGatherData;
+import HashBuildStructure;
+import Params;
 
 RWStructuredBuffer<Reservoir> gReservoir;
 StructuredBuffer<Reservoir> gReservoirPrev;
@@ -27,6 +29,11 @@ Texture2D<float4> gView;
 Texture2D<float4> gPrevView;
 RWStructuredBuffer<SampleGenerator> gSampleGenState;
 
+StructuredBuffer<uint> gCellStorageBuffer;
+ByteAddressBuffer gCellIndexBuffer;
+ByteAddressBuffer gCellChecksumBuffer;
+ByteAddressBuffer gCellCounterBuffer;
+
 #define BIAS_MODE_BASIC 1
 #define BIAS_MODE_RAYTRACE 2
 //This is for syntax highlighting
@@ -37,6 +44,7 @@ RWStructuredBuffer<SampleGenerator> gSampleGenState;
 cbuffer PerFrame
 {
     uint gFrameCount;                   //Current it for sample gen
+    float3 gCameraPos;
 }
 
 cbuffer Constant
@@ -51,6 +59,8 @@ cbuffer Constant
     float gAttenuationRadius;       //Radius for the attenuation
     float2 gJacobianMinMax;         //Minimum and Maximum values for the jacobian
     uint _pad;
+
+    GIParameter gParams;
 }
 
 struct LightSample{
@@ -234,6 +244,69 @@ void spatialResampling(uint2 pixel, inout SampleGenerator sg, inout Reservoir r,
     uint cachedM[4];
     int selectedSample = -1; //Index of the selected sample
 
+    #if USE_WORLD_SPACE_RESERVOIR
+    float cellSize = calculateCellSize(surface.posW, gCameraPos, gParams);
+    float3 jitteredPos = surface.posW + (sampleNext3D(sg) * 2.0f - 1.0f) * 0.1f * cellSize;
+    int cellIdx = findCell(jitteredPos, float3(0), cellSize, gParams, gCellChecksumBuffer);
+    if (cellIdx == -1)
+    {
+        return;
+    }
+    uint cellBaseIdx = gCellIndexBuffer.Load(cellIdx);
+    uint sampleCount = gCellCounterBuffer.Load(cellIdx);
+
+    //uint maxSpatialIteration = 3u; //spatialReservoir.M > 10 ? 3u : 10u;
+
+    //uint increment = (sampleCount + maxSpatialIteration - 1) / maxSpatialIteration;
+    //uint offset = round(sampleNext1D(sg) * (increment - 1));
+    uint offset = 0;
+
+    numSamples = clamp(sampleCount, 0, 8);
+    //for (uint i = 0; i < sampleCount; i+= increment)
+    for (uint i = 0; i < numSamples; i++)
+    {
+        cachedIndices[i] = 0xFFFFFFFF; //Set to max int
+        if (i % 2 == 0)
+            cachedM[i / 2] = 0;
+
+        uint neighborPixelIndex = gCellStorageBuffer[cellBaseIdx + (offset + i)%sampleCount];
+        Reservoir sampledReservoir = gReservoirPrev[neighborPixelIndex];    //Current reservoir is stored in prev
+
+        bool sampleValid = true;
+        FGData fgNeigh = gFGSampleDataPrev[neighborPixelIndex];
+        //Kill the reservoir if the sample is no longer valid or was replaced
+        if (!fgNeigh.valid)
+        {
+            sampledReservoir.weightSum = 0;
+            sampledReservoir.M = 0;
+            sampleValid = false;
+        }
+        //Store indices
+        uint2 idx = index1Dto2D(neighborPixelIndex, gFrameDim.x);
+        cachedIndices[i] = (idx.x & 0xFFFF) << 16 | (idx.y & 0xFFFF);
+        uint M = 0xFFFF & sampledReservoir.M;
+        if (i % 2 != 0)
+            M = M << 16;
+        cachedM[i / 2] |= M;
+
+        //Get neightbor target PDF for current surface
+        float sampletargetFunc = 0.f;
+        if (sampledReservoir.M > 0 && sampleValid)
+        {
+            LightSample ls = { };
+            float dis;
+            if (!getLightSample(fgNeigh, surface.posW, ls, dis))
+                continue;
+            sampletargetFunc = surface.getPdf(ls.dir, ls.Li);
+        }
+        //Combine Reservoirs
+        if (r.combineReservoir(sampledReservoir, sampletargetFunc, sampleNext1D(sg)))
+        {
+            selectedSample = i;
+            fgSample = fgNeigh;
+        }
+    }
+    #else
     //Go through all neighbors
     for (uint i = 0; i < numSamples; i++)
     {
@@ -295,6 +368,7 @@ void spatialResampling(uint2 pixel, inout SampleGenerator sg, inout Reservoir r,
             fgSample = fgNeigh;
         }
     }
+    #endif
 
     //Bias correction
     #if BIAS_CORRECTION_MODE >= BIAS_MODE_BASIC

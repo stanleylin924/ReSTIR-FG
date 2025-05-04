@@ -57,3 +57,25 @@ int findOrInsertCell(float3 pos, float3 norm, float cellSize, GIParameter params
 
     return -1;
 }
+
+int findCell(float3 jitteredPos, float3 norm, float cellSize, GIParameter params, ByteAddressBuffer checkSumBuffer)
+{ // + float3(1, 1, 1) * 0.001f;
+    //+ (sampleNext3D(sg) * 2.0f - 1.0f) * 0.001f; // * cellSize;
+    //-params.sceneBBMin;
+    uint3 p = uint3(floor((jitteredPos - params.sceneBBMin)/ cellSize));
+
+    uint normprint = binaryNorm(norm);
+
+    uint cellIndex = pcg32(normprint + pcg32(cellSize + pcg32(p.z + pcg32(p.y + pcg32(p.x))))) % 100000;
+    uint checkSum = max(jenkinsHash(normprint + jenkinsHash(cellSize + jenkinsHash(p.z + jenkinsHash(p.y + jenkinsHash(p.x))))), 1);
+
+    for (uint i = 0; i < 32; i++)
+    {
+        uint idx = cellIndex * 32 + i;
+
+        if (checkSumBuffer.Load(idx) == checkSum)
+            return idx;
+    }
+
+    return -1;
+}

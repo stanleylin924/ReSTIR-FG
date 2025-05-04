@@ -9,6 +9,10 @@ uint index2Dto1D(uint2 idx, uint width) {
     return idx.x + width * idx.y;
 }
 
+uint2 index1Dto2D(uint idx, uint width) {
+    return uint2(idx % width, idx / width);
+}
+
 //Final Gather Data. 64 bytes
 struct FGData{
     float3 posW;
