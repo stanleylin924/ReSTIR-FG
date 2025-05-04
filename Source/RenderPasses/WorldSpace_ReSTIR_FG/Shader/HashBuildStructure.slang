@@ -19,12 +19,12 @@ uint pcg32(uint input)
 
 uint binaryNorm(float3 norm)
 {
-    uint a = norm.x > 0.f ? 1 : 0;
-    uint b = norm.y > 0.f ? 1 : 0;
-    uint c = norm.z > 0.f ? 1 : 0;
-    return a * 100 + b * 10 + c;
-    //uint3 biNorm = floor((norm + 1.f) * 1.5f);
-    //return biNorm.x << 4 | biNorm.y << 2 | biNorm.z;
+    //uint a = norm.x > 0.f ? 1 : 0;
+    //uint b = norm.y > 0.f ? 1 : 0;
+    //uint c = norm.z > 0.f ? 1 : 0;
+    //return a * 100 + b * 10 + c;
+    uint3 biNorm = floor((norm + 1.f) * 1.5f);
+    return biNorm.x << 4 | biNorm.y << 2 | biNorm.z;
 }
 
 float calculateCellSize(float3 pos, float3 cameraPos, GIParameter params)
