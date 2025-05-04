@@ -28,6 +28,8 @@ cbuffer PerFrame
     float gHashScaleFactor; //Hash scale factor. 1/diameter
     float gAttenuationRadius;
     float3 gCameraPos;
+    bool gUseFixedSeed;     //Debugging - Use a fixed seed for the sample generator
+    uint gFixedSeed;        //Debugging - Fixed seed value
     //uint3 _pad;
 }
 
@@ -192,7 +194,7 @@ void rayGen()
     #if STORE_SAMPLE_GEN_STATE
         SampleGenerator sg = gSampleGenState[index2Dto1D(launchIndex,launchDim.x)];
     #else
-        SampleGenerator sg = SampleGenerator(launchIndex, gFrameCount + 3 * 32);
+        SampleGenerator sg = SampleGenerator(launchIndex, gUseFixedSeed ? gFixedSeed : gFrameCount + 3 * 32);
     #endif
     
 

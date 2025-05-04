@@ -28,6 +28,8 @@ Texture2D<float4> gOutSpecularReflectance;
 cbuffer PerFrame
 {
     uint gFrameCount;                   //Current it for sample gen
+    bool gUseFixedSeed;                 //Debugging - Use a fixed seed for the sample generator
+    uint gFixedSeed;                    //Debugging - Fixed seed value
 }
 
 static const float kRayEpsilon = 0.99f;
@@ -104,7 +106,7 @@ void main(uint2 pixel : SV_DispatchThreadID)
     if (is_valid(gOutSpecularRadiance))
         specularIllumination = gOutSpecularRadiance[pixel];
     
-    SampleGenerator sg = SampleGenerator(pixel, gFrameCount + 4 * 32);
+    SampleGenerator sg = SampleGenerator(pixel, gUseFixedSeed ? gFixedSeed : gFrameCount + 4 * 32);
 
     //Get shading data and view buffer
     float3 viewDir = -gView[pixel].xyz;

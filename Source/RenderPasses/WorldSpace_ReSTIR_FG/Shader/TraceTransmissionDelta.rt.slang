@@ -29,6 +29,8 @@ cbuffer PerFrame
     uint gMaxBounces;       // Max number of bounces
     bool gRequDiffParts;
     bool gAlphaTest;
+    bool gUseFixedSeed;     //Debugging - Use a fixed seed for the sample generator
+    uint gFixedSeed;        //Debugging - Fixed seed value
 }
 
 // Inputs
@@ -150,7 +152,7 @@ void rayGen()
     #if STORE_SAMPLE_GEN_STATE
         SampleGenerator sg = SampleGenerator(launchIndex, gFrameCount);
     #else
-        SampleGenerator sg = SampleGenerator(launchIndex, gFrameCount + 2 * 32);
+        SampleGenerator sg = SampleGenerator(launchIndex, gUseFixedSeed ? gFixedSeed : gFrameCount + 2 * 32);
     #endif
     let lod = ExplicitLodTextureSampler(0.f);
     float hitT = 0.f;
