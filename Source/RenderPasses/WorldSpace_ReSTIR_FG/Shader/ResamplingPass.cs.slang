@@ -248,7 +248,7 @@ void spatialResampling(uint2 pixel, inout SampleGenerator sg, inout Reservoir r,
     #if USE_WORLD_SPACE_RESERVOIR
     float cellSize = calculateCellSize(surface.posW, gCameraPos, gParams);
     float3 jitteredPos = surface.posW + (sampleNext3D(sg) * 2.0f - 1.0f) * 0.1f * cellSize;
-    int cellIdx = findCell(jitteredPos, float3(0), cellSize, gParams, gCellChecksumBuffer);
+    int cellIdx = findCell(jitteredPos, surface.normal, cellSize, gParams, gCellChecksumBuffer);
     if (cellIdx == -1)
     {
         return;
