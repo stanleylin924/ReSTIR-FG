@@ -38,6 +38,7 @@
 #include "Rendering/AccelerationStructure/CustomAccelerationStructure.h"
 
 #include "Utils/Math/FalcorMath.h"
+#include "Utils/Algorithm/PrefixSum.h"
 #include "Shader/Params.slang"
 
 using namespace Falcor;
@@ -387,4 +388,5 @@ private:
     ref<ComputePass> mpCausticResamplingPass;           // Resampling Pass for Caustics
     ref<ComputePass> mpFinalShadingPass;                // Final Shading Pass
     ref<ComputePass> mpDirectAnalyticPass;              // Direct Analytic as an alternative to ReSTIR
+    std::unique_ptr<PrefixSum> mpPrefixSumPass;         // Prefix Sum Pass for cell index buffer
 };

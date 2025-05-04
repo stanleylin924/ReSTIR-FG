@@ -285,7 +285,7 @@ void WorldSpace_ReSTIR_FG::execute(RenderContext* pRenderContext, const RenderDa
     //Clear the reservoir
     if (mClearReservoir)
     {
-        // TODO: »İ­n¨Ï¥Î§Oªº¤èªk¨Ó²M°£ Reservoir Buffers
+        // TODO: éœ€è¦ä½¿ç”¨åˆ¥çš„æ–¹æ³•ä¾†æ¸…é™¤ Reservoir Buffers
         for (uint i = 0; i < 2; i++)
         {
             if (mpReservoirBuffer[i])
@@ -729,6 +729,7 @@ void WorldSpace_ReSTIR_FG::setScene(RenderContext* pRenderContext, const ref<Sce
     mpCausticResamplingPass.reset();
     mpEmissiveLightSampler.reset();
     mpGIEmissiveLightSampler.reset();
+    mpPrefixSumPass.reset();
     mpRTXDI.reset();
     mClearReservoir = true;
     mResetTex = true;
@@ -1725,6 +1726,19 @@ void WorldSpace_ReSTIR_FG::buildHashGridPass(RenderContext* pRenderContext, cons
         mpBuildHashGridPass = ComputePass::create(mpDevice, desc, defines, true);
     }
     FALCOR_ASSERT(mpBuildHashGridPass);
+
+    // Build cell index buffer
+    if (!mpPrefixSumPass)
+        mpPrefixSumPass = std::make_unique<PrefixSum>(mpDevice);
+
+    pRenderContext->copyBufferRegion(
+        mpCellIndexBuffer[(mFrameCount + 1) % 2].get(), 0, mpCellCounterBuffer[(mFrameCount + 1) % 2].get(), 0,
+        mpCellCounterBuffer[(mFrameCount + 1) % 2]->getSize()
+    );
+    mpPrefixSumPass->execute(
+        pRenderContext, mpCellIndexBuffer[(mFrameCount + 1) % 2], static_cast<uint>(mpCellIndexBuffer[(mFrameCount + 1) % 2]->getSize())
+    );
+    FALCOR_ASSERT(mpPrefixSumPass);
 
      // Set variables
      auto var = mpBuildHashGridPass->getRootVar();
