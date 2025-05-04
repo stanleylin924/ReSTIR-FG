@@ -248,7 +248,7 @@ private:
     float2 mJacobianMinMax = float2(1 / 10.f, 10.f);                // Min and Max values that are allowed for the jacobian determinant (Angle/dist too different if lower/higher)
     BiasCorrectionMode mBiasCorrectionMode = BiasCorrectionMode::RayTraced; // Bias Correction Mode
     bool mUseCausticsForIndirectLight = true;                  // Use Caustic photons as indirect light samples
-    bool mUseWorldSpaceReservoir = false;                           // Use World Space Reservoir
+    bool mUseWorldSpaceReservoir = true;                            // Use World Space Reservoir
 
 
     //Photon
