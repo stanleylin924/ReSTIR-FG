@@ -218,7 +218,7 @@ private:
     uint mFixedSeed = 0;         // Debugging - Fixed seed value
 
     //Material Settings
-    bool mUseLambertianDiffuse = true;  //Diffuse BRDF used by ReSTIR PT and SuffixReSTIR
+    bool mUseLambertianDiffuse = false;  //Diffuse BRDF used by ReSTIR PT and SuffixReSTIR
     bool mDisableDiffuse = false;
     bool mDisableSpecular = false;
     bool mDisableTranslucency = false;
