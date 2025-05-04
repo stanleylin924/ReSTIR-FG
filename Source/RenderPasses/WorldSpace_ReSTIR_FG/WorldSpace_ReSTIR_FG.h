@@ -37,6 +37,7 @@
 
 #include "Rendering/AccelerationStructure/CustomAccelerationStructure.h"
 
+#include "Utils/Debug/PixelDebug.h"
 #include "Utils/Math/FalcorMath.h"
 #include "Utils/Algorithm/PrefixSum.h"
 #include "Shader/Params.slang"
@@ -58,7 +59,7 @@ public:
     virtual void execute(RenderContext* pRenderContext, const RenderData& renderData) override;
     virtual void renderUI(Gui::Widgets& widget) override;
     virtual void setScene(RenderContext* pRenderContext, const ref<Scene>& pScene) override;
-    virtual bool onMouseEvent(const MouseEvent& mouseEvent) override { return false; }
+    virtual bool onMouseEvent(const MouseEvent& mouseEvent) override;
     virtual bool onKeyEvent(const KeyboardEvent& keyEvent) override { return false; }
 
     //GUI Structs and enum
@@ -195,6 +196,7 @@ private:
     ref<SampleGenerator> mpSampleGenerator;                             //GPU Sample Gen
     std::unique_ptr<RTXDI> mpRTXDI;                                     //Ptr to RTXDI for direct use
     RTXDI::Options mRTXDIOptions;                                      //Options for RTXDI
+    std::unique_ptr<PixelDebug> mpPixelDebug;                           ///< Utility class for pixel debugging (print in shaders).
 
     std::unique_ptr<EmissiveLightSampler> mpEmissiveLightSampler;       //Light Sampler
     std::unique_ptr<CustomAccelerationStructure> mpPhotonAS;            //Accel Pointer
@@ -212,6 +214,8 @@ private:
     bool mUseReducePhotonData = false;
     bool mResetTex = false;
     bool mOptionsChanged = false;
+    bool mUseFixedSeed = false;  // Debugging - Use a fixed seed for the sample generator
+    uint mFixedSeed = 0;         // Debugging - Fixed seed value
 
     //Material Settings
     bool mUseLambertianDiffuse = true;  //Diffuse BRDF used by ReSTIR PT and SuffixReSTIR
