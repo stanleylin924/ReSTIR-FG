@@ -45,6 +45,9 @@ struct Reservoir{
     
         if(selectSample){
             targetFunc = othertargetFunc;
+            vPos = other.vPos;
+            vNorm = other.vNorm;
+            age = other.age;
         }
 
         return selectSample;
