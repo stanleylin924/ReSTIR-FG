@@ -9,6 +9,7 @@ import Utils.Math.PackedFormats;
 import Utils.Math.FormatConversion;
 import Rendering.Materials.IsotropicGGX;
 import Utils.Color.ColorHelpers;
+import Utils.Debug.PixelDebug;
 import Rendering.RTXDI.RTXDI;
 import SurfaceDataFG;
 import FinalGatherData;
@@ -124,6 +125,8 @@ void rayGen()
 {
     uint2 launchIndex = DispatchRaysIndex().xy;
     uint2 launchDim = DispatchRaysDimensions().xy;
+
+    printSetPixel(launchIndex);
 
     float4 diffuseReflectance = { };
     float4 specularReflectance = { };

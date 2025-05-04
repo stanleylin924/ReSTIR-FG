@@ -10,6 +10,7 @@ import Rendering.Lights.LightHelpers;
 import Rendering.Materials.IsotropicGGX;
 import Utils.Math.MathHelpers;
 import Utils.Color.ColorHelpers;
+import Utils.Debug.PixelDebug;
 
 import FinalGatherData;
 
@@ -80,6 +81,8 @@ bool evalAnalyticLight(const in ShadingData sd, inout SampleGenerator sg, const 
 [numthreads(16, 16, 1)]
 void main(uint2 pixel : SV_DispatchThreadID)
 {
+    printSetPixel(pixel);
+
     bool valid = true;
     //Load Reflectance (was set before)
     float3 diffuseReflectance = { };

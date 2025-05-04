@@ -10,6 +10,7 @@ import Rendering.Lights.LightHelpers;
 import Utils.Math.PackedFormats;
 import Utils.Math.FormatConversion;
 import Utils.Color.ColorHelpers;
+import Utils.Debug.PixelDebug;
 
 import Reservoir;
 import SurfaceDataFG;
@@ -638,6 +639,8 @@ void rayGen()
     uint2 launchIndex = DispatchRaysIndex().xy;
     uint2 launchDim = DispatchRaysDimensions().xy;
             
+    printSetPixel(launchIndex);
+
     //Prepare payload
     RayData rayData = RayData();
     #if STORE_SAMPLE_GEN_STATE
