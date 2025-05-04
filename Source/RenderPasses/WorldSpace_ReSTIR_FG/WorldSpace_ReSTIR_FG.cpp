@@ -724,6 +724,7 @@ void WorldSpace_ReSTIR_FG::setScene(RenderContext* pRenderContext, const ref<Sce
     mGeneratePhotonPass = RayTraceProgramHelper::create();
     mCollectPhotonPass = RayTraceProgramHelper::create();
     mTraceTransmissionDelta = RayTraceProgramHelper::create();
+    mpBuildHashGridPass.reset();
     mpFinalShadingPass.reset();
     mpResamplingPass.reset();
     mpCausticResamplingPass.reset();
