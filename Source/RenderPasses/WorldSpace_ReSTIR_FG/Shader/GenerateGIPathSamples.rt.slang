@@ -364,8 +364,8 @@ void rayGen()
         reservoir.targetFunc = surface.getPdf(bsdfSample.wo);
     
         reservoir.weightSum = 1.f / bsdfSample.pdf; // 1/selectPDF
-        reservoir.vPos = sd.posW;
-        reservoir.vNorm = sd.faceN;
+        reservoir.vPos = surface.posW;
+        reservoir.vNorm = surface.normal;
 
         float3 thp = float3(1.f);
         float3 radiance = float3(0.f);
