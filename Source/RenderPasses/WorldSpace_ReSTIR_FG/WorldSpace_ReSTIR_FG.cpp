@@ -1397,6 +1397,7 @@ void WorldSpace_ReSTIR_FG::generateReSTIRGISamples(RenderContext* pRenderContext
     var["gSurfaceData"] = mpSurfaceBuffer[mFrameCount % 2];
     var["gGISample"] = mpFGSampelDataBuffer[mFrameCount % 2];
     var["gSampleGenState"] = mpSampleGenState;
+    var["gAppendBuffer"] = mpAppendBuffer;
 
     FALCOR_ASSERT(mScreenRes.x > 0 && mScreenRes.y > 0);
     mpPixelDebug->prepareProgram(mReSTIRGISamplePass.pProgram, var);

@@ -22,6 +22,7 @@ import Utils.Debug.PixelDebug;
 import Reservoir;
 import SurfaceDataFG;
 import FinalGatherData;
+import HashBuildStructure;
 
 cbuffer PerFrame
 {
@@ -42,6 +43,7 @@ Texture2D <float>gLinZ;
 RWStructuredBuffer<PackedSurfaceDataFG> gSurfaceData;
 RWStructuredBuffer<SampleGenerator> gSampleGenState;
 RWStructuredBuffer<FGData> gGISample;
+RWStructuredBuffer<HashAppendData> gAppendBuffer;
 
 //Outputs
 RWStructuredBuffer<Reservoir> gReservoir;
