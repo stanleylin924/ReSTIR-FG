@@ -335,6 +335,7 @@ void WorldSpace_ReSTIR_FG::execute(RenderContext* pRenderContext, const RenderDa
     if (mRenderMode == RenderMode::ReSTIRGI)
     {
         generateReSTIRGISamples(pRenderContext, renderData);
+        buildHashGridPass(pRenderContext, renderData);
     }
 
     if (mRenderMode == RenderMode::ReSTIRFG || mRenderMode == RenderMode::FinalGather)
