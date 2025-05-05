@@ -1382,6 +1382,10 @@ void WorldSpace_ReSTIR_FG::generateReSTIRGISamples(RenderContext* pRenderContext
     var[nameBuf]["gBounces"] = mGIMaxBounces;
     var[nameBuf]["gUseFixedSeed"] = mUseFixedSeed;
     var[nameBuf]["gFixedSeed"] = mFixedSeed;
+    var[nameBuf]["gCameraPos"] = mpScene->getCamera()->getPosition();
+
+    nameBuf = "Constant";
+    var[nameBuf]["gParams"].setBlob(mParams);
 
     if (mpRTXDI)
         mpRTXDI->setShaderData(var);
@@ -1398,6 +1402,8 @@ void WorldSpace_ReSTIR_FG::generateReSTIRGISamples(RenderContext* pRenderContext
     var["gGISample"] = mpFGSampelDataBuffer[mFrameCount % 2];
     var["gSampleGenState"] = mpSampleGenState;
     var["gAppendBuffer"] = mpAppendBuffer;
+    var["gCellChecksumBuffer"] = mpCellChecksumBuffer[(mFrameCount + 1) % 2];
+    var["gCellCounterBuffer"] = mpCellCounterBuffer[(mFrameCount + 1) % 2];
 
     FALCOR_ASSERT(mScreenRes.x > 0 && mScreenRes.y > 0);
     mpPixelDebug->prepareProgram(mReSTIRGISamplePass.pProgram, var);

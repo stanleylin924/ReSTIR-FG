@@ -23,6 +23,7 @@ import Reservoir;
 import SurfaceDataFG;
 import FinalGatherData;
 import HashBuildStructure;
+import Params;
 
 cbuffer PerFrame
 {
@@ -31,7 +32,13 @@ cbuffer PerFrame
     uint gBounces;
     bool gUseFixedSeed;     //Debugging - Use a fixed seed for the sample generator
     uint gFixedSeed;        //Debugging - Fixed seed value
-    uint3 _pad;
+    float3 gCameraPos;
+    //uint3 _pad;
+}
+
+cbuffer Constant
+{
+    GIParameter gParams;
 }
 
 // Inputs
@@ -44,6 +51,8 @@ RWStructuredBuffer<PackedSurfaceDataFG> gSurfaceData;
 RWStructuredBuffer<SampleGenerator> gSampleGenState;
 RWStructuredBuffer<FGData> gGISample;
 RWStructuredBuffer<HashAppendData> gAppendBuffer;
+RWByteAddressBuffer gCellChecksumBuffer;
+RWByteAddressBuffer gCellCounterBuffer;
 
 //Outputs
 RWStructuredBuffer<Reservoir> gReservoir;
@@ -234,6 +243,27 @@ float evalMIS(float n0, float p0, float n1, float p1)
     float q0 = n0 * p0;
     float q1 = n1 * p1;
     return q0 / (q0 + q1);
+}
+
+HashAppendData buildHashAppendData(float3 pos, float3 norm, uint linearIdx)
+{
+    HashAppendData data = { };
+    data.isValid = 0;
+    data.reservoirIdx = linearIdx;
+    if (any(norm != 0))
+    {
+        float cellSize = calculateCellSize(pos, gCameraPos, gParams);
+        int cellIdx = findOrInsertCell(pos, norm, cellSize, gParams, gCellChecksumBuffer);
+        if (cellIdx != -1)
+        {
+            uint inCellIdx;
+            gCellCounterBuffer.InterlockedAdd(cellIdx, 1, inCellIdx);
+            data.isValid = 1;
+            data.cellIdx = cellIdx;
+            data.inCellIdx = inCellIdx;
+        }
+    }
+    return data;
 }
 
 [shader("miss")]
@@ -448,4 +478,7 @@ void rayGen()
     gGISample[index2Dto1D(launchIndex, launchDim.x)] = giData;
     gSurfaceData[index2Dto1D(launchIndex, launchDim.x)] = surface.pack();
     gReservoir[index2Dto1D(launchIndex, launchDim.x)] = reservoir;
+
+    HashAppendData data = buildHashAppendData(reservoir.vPos, reservoir.vNorm, index2Dto1D(launchIndex, launchDim.x));
+    gAppendBuffer[index2Dto1D(launchIndex, launchDim.x)] = data;
 }
