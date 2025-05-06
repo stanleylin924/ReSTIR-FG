@@ -240,8 +240,8 @@ private:
     bool mClearReservoir = true;                                    //Clears both reservoirs
     float mSampleRadiusAttenuation = 0.00f;                         //Radius for the better defined attenuation
     uint mTemporalMaxAge = 20;                                      // Max age of an temporal reservoir
-    uint mspatialSamples = 1;                                      // Number of spatial samples
-    uint mDisocclusionBoostSamples = 2;                             // Number of spatial samples if no temporal surface was found
+    uint mspatialSamples = 3;                                      // Number of spatial samples
+    uint mDisocclusionBoostSamples = 4;                             // Number of spatial samples if no temporal surface was found
     float mSamplingRadius = 20.f;                                   // Sampling radius in pixel
     float mRelativeDepthThreshold = 0.15f;                          // Realtive Depth threshold (is neighbor 0.1 = 10% as near as the current depth)
     float mNormalThreshold = 0.6f;                                  // Cosine of maximum angle between both normals allowed
