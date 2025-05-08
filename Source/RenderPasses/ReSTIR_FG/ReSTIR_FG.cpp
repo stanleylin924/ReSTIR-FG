@@ -361,7 +361,7 @@ void ReSTIR_FG::execute(RenderContext* pRenderContext, const RenderData& renderD
             mFrameCount++;
             if (mRenderMode == RenderMode::ReSTIRGI)
             {
-                generateReSTIRGISamples(pRenderContext, renderData, true);
+                generateReSTIRGISamples(pRenderContext, renderData, true, mDisocclusionSkipInitialSampling);
             }
 
             // Do resampling
