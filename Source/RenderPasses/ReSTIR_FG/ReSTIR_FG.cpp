@@ -708,6 +708,18 @@ void ReSTIR_FG::renderUI(Gui::Widgets& widget)
         }
     }
 
+    if (auto group = widget.group("Disocclusion Processing"))
+    {
+        changed |= group.checkbox("Enable Disocclusion Processing", mDisocclusionProcessing);
+        if (mDisocclusionProcessing)
+        {
+            changed |= group.var("Max Iterations", mDisocclusionMaxIterations, 0u, 20u);
+            changed |= group.var("Number of Samples", mDisocclusionNumSamples, 1u, 8u);
+            changed |= group.checkbox("Skip Initial Sampling", mDisocclusionSkipInitialSampling);
+            changed |= group.checkbox("Enable Accumulation", mDisocclusionAccumulate);
+        }
+    }
+
     if (auto group = widget.group("Material Options"))
     {
         changed |= group.checkbox("Use Lambertian Diffuse BRDF", mUseLambertianDiffuse);
