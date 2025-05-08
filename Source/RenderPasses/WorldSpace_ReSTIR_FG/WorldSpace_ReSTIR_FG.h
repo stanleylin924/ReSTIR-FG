@@ -84,6 +84,12 @@ public:
         ReSTIRGI = 2u
     };
 
+    FALCOR_ENUM_INFO(RenderMode, {
+        {RenderMode::FinalGather, "FinalGather"},
+        {RenderMode::ReSTIRFG, "ReSTIRFG"},
+        {RenderMode::ReSTIRGI, "ReSTIRGI"},
+    });
+
     enum class DirectLightingMode : uint
     {
         None = 0u,
@@ -395,3 +401,5 @@ private:
     ref<ComputePass> mpDirectAnalyticPass;              // Direct Analytic as an alternative to ReSTIR
     std::unique_ptr<PrefixSum> mpPrefixSumPass;         // Prefix Sum Pass for cell index buffer
 };
+
+FALCOR_ENUM_REGISTER(WorldSpace_ReSTIR_FG::RenderMode);

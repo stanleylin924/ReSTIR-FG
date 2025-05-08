@@ -79,6 +79,12 @@ public:
         ReSTIRGI = 2u
     };
 
+    FALCOR_ENUM_INFO(RenderMode, {
+        {RenderMode::FinalGather, "FinalGather"},
+        {RenderMode::ReSTIRFG, "ReSTIRFG"},
+        {RenderMode::ReSTIRGI, "ReSTIRGI"},
+    });
+
     enum class DirectLightingMode : uint
     {
         None = 0u,
@@ -373,3 +379,5 @@ private:
     ref<ComputePass> mpFinalShadingPass;                // Final Shading Pass
     ref<ComputePass> mpDirectAnalyticPass;              // Direct Analytic as an alternative to ReSTIR
 };
+
+FALCOR_ENUM_REGISTER(ReSTIR_FG::RenderMode);

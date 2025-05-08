@@ -18,6 +18,7 @@ ENABLE_CAMERA_ORIENTATION = False
 DISOCCLUSION_TESTCASE = 1
 
 ENABLE_WORLDSPACE = False
+RENDER_MODE = 'ReSTIRGI'  # FinalGather, ReSTIRFG, ReSTIRGI
 
 # 檢測單幀數據時，關閉截圖以避免影響分析數據
 if ENABLE_PROFILER and PROFILE_SINGLE_FRAME:
@@ -34,7 +35,7 @@ def render_graph_ReSTIR_FG():
     g.create_pass('AccumulatePass', 'AccumulatePass', {'enabled': False, 'outputSize': 'Default', 'autoReset': True, 'precisionMode': 'Single', 'maxFrameCount': 0, 'overflowMode': 'Stop'})
     g.create_pass('ToneMapper', 'ToneMapper', {'outputSize': 'Default', 'useSceneMetadata': True, 'exposureCompensation': 0.0, 'autoExposure': False, 'filmSpeed': 100.0, 'whiteBalance': False, 'whitePoint': 6500.0, 'operator': 'Linear', 'clamp': True, 'whiteMaxLuminance': 1.0, 'whiteScale': 11.199999809265137, 'fNumber': 1.0, 'shutter': 1.0, 'exposureMode': 'AperturePriority'})
     g.create_pass('VBufferRT', 'VBufferRT', {'outputSize': 'Default', 'samplePattern': 'Center', 'sampleCount': 16, 'useAlphaTest': True, 'adjustShadingNormals': True, 'forceCullMode': False, 'cull': 'Back', 'useTraceRayInline': False, 'useDOF': False})
-    g.create_pass(restir_fg, restir_fg, {'PhotonBufferSizeGlobal': 800000, 'PhotonBufferSizeCaustic': 400000, 'AnalyticEmissiveRatio': 0.3499999940395355, 'PhotonBouncesGlobal': 10, 'PhotonBouncesCaustic': 10, 'PhotonRadiusGlobal': 0.01600000075995922, 'PhotonRadiusCaustic': 0.004000000189989805, 'EnableStochCollect': True, 'StochCollectK': 3, 'EnablePhotonCullingGlobal': True, 'EnablePhotonCullingCaustic': True, 'CullingRadius': 0.10000000149011612, 'CullingBits': 20, 'CausticCollectionMode': 3, 'CausticResamplingMode': 2, 'EnableDynamicDispatch': False, 'NumDispatchedPhotons': 1199616})
+    g.create_pass(restir_fg, restir_fg, {'RenderMode': RENDER_MODE, 'PhotonBufferSizeGlobal': 800000, 'PhotonBufferSizeCaustic': 400000, 'AnalyticEmissiveRatio': 0.3499999940395355, 'PhotonBouncesGlobal': 10, 'PhotonBouncesCaustic': 10, 'PhotonRadiusGlobal': 0.01600000075995922, 'PhotonRadiusCaustic': 0.004000000189989805, 'EnableStochCollect': True, 'StochCollectK': 3, 'EnablePhotonCullingGlobal': True, 'EnablePhotonCullingCaustic': True, 'CullingRadius': 0.10000000149011612, 'CullingBits': 20, 'CausticCollectionMode': 3, 'CausticResamplingMode': 2, 'EnableDynamicDispatch': False, 'NumDispatchedPhotons': 1199616})
     g.add_edge('AccumulatePass.output', 'ToneMapper.src')
     g.add_edge('VBufferRT.mvec', f'{restir_fg}.mvec')
     g.add_edge('VBufferRT.vbuffer', f'{restir_fg}.vbuffer')

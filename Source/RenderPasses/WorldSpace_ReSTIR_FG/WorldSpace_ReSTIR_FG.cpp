@@ -94,6 +94,7 @@ namespace
     const std::string kPropsCausticResamplingMode = "CausticResamplingMode";
     const std::string kPropsEnableDynamicDispatch = "EnableDynamicDispatch";
     const std::string kPropsNumDispatchedPhotons = "NumDispatchedPhotons";
+    const std::string kPropsRenderMode = "RenderMode";
 
     //UI Dropdowns
     const Gui::DropdownList kResamplingModeList{
@@ -207,6 +208,8 @@ void WorldSpace_ReSTIR_FG::parseProperties(const Properties& props)
             mUseDynamicPhotonDispatchCount = value;
         else if (key == kPropsNumDispatchedPhotons)
             mNumDispatchedPhotons = value;
+        else if (key == kPropsRenderMode)
+            mRenderMode = value;
         else
             logWarning("Unknown property '{}' in WorldSpace_ReSTIR_FG properties.", key);
 
