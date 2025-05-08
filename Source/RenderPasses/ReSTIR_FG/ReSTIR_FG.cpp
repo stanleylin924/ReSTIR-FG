@@ -235,6 +235,8 @@ Properties ReSTIR_FG::getProperties() const
     props[kPropsCausticResamplingMode] = (uint)mCausticResamplingMode;
     props[kPropsEnableDynamicDispatch] = mUseDynamicPhotonDispatchCount;
     props[kPropsNumDispatchedPhotons] = mNumDispatchedPhotons;
+    props[kPropsRenderMode] = mRenderMode;
+    props[kPropsEnableDisocclusionProcessing] = mDisocclusionProcessing;
 
     return props;
 }
