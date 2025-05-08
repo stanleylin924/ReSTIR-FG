@@ -310,6 +310,7 @@ private:
     // Disocclusion
     bool mDisocclusionProcessing = true;  // Enable disocclusion processing
     uint mDisocclusionMaxIterations = 6;            // Max iterations for disocclusion processing
+    uint mDisocclusionNumSamples = 4;               // Number of samples for disocclusion processing
     bool mDisocclusionSkipInitialSampling = true;   // Skip initial sampling to save time
     uint mDisocclusionAccumCount = 0;
     bool mDisocclusionAccumulate = false;

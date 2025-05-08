@@ -1771,6 +1771,7 @@ void ReSTIR_FG::resamplingPass(RenderContext* pRenderContext, const RenderData& 
      var[uniformName]["gAttenuationRadius"] = mSampleRadiusAttenuation;
      var[uniformName]["gJacobianMinMax"] = mJacobianMinMax;
      var[uniformName]["gDisocclusionProcessing"] = disocclusionProcessing;
+     var[uniformName]["gDisocclusionNumSamples"] = mDisocclusionNumSamples;
 
      // Execute
      const uint2 targetDim = renderData.getDefaultTextureDims();
