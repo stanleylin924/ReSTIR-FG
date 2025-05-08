@@ -352,7 +352,7 @@ void ReSTIR_FG::execute(RenderContext* pRenderContext, const RenderData& renderD
     if (mDisocclusionProcessing)
     {
         mDisocclusionAccumCount = 0;
-        for (int i = 0; i < 6; i++) // 必須迭代偶數次
+        for (int i = 0; i < mDisocclusionMaxIterations; i++) // 必須迭代偶數次
         {
             if (mDisocclusionAccumulate && i > 3)
             {
