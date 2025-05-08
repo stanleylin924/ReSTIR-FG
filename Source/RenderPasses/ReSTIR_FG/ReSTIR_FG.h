@@ -308,6 +308,7 @@ private:
     LightBVHSampler::Options mGILightBVHOptions;
    
     // Disocclusion
+    bool mDisocclusionProcessing = true;  // Enable disocclusion processing
     uint mDisocclusionAccumCount = 0;
     bool mDisocclusionAccumulate = false;
 

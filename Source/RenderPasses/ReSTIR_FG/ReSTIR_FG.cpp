@@ -95,6 +95,7 @@ namespace
     const std::string kPropsEnableDynamicDispatch = "EnableDynamicDispatch";
     const std::string kPropsNumDispatchedPhotons = "NumDispatchedPhotons";
     const std::string kPropsRenderMode = "RenderMode";
+    const std::string kPropsEnableDisocclusionProcessing = "EnableDisocclusionProcessing";
 
     //UI Dropdowns
     const Gui::DropdownList kResamplingModeList{
@@ -205,6 +206,8 @@ void ReSTIR_FG::parseProperties(const Properties& props)
             mNumDispatchedPhotons = value;
         else if (key == kPropsRenderMode)
             mRenderMode = value;
+        else if (key == kPropsEnableDisocclusionProcessing)
+            mDisocclusionProcessing = value;
         else
             logWarning("Unknown property '{}' in ReSTIR_FG properties.", key);
 
@@ -344,24 +347,27 @@ void ReSTIR_FG::execute(RenderContext* pRenderContext, const RenderData& renderD
         causticResamplingPass(pRenderContext, renderData);
 
     //Disocclusion Processing
-    mDisocclusionAccumCount = 0;
-    for (int i = 0; i < 6; i++) // 必須迭代偶數次
+    if (mDisocclusionProcessing)
     {
-        if (mDisocclusionAccumulate && i > 3)
+        mDisocclusionAccumCount = 0;
+        for (int i = 0; i < 6; i++) // 必須迭代偶數次
         {
-            finalShadingPass(pRenderContext, renderData, true);
-            mDisocclusionAccumCount++;
-        }
+            if (mDisocclusionAccumulate && i > 3)
+            {
+                finalShadingPass(pRenderContext, renderData, true);
+                mDisocclusionAccumCount++;
+            }
 
-        mFrameCount++;
-        if (mRenderMode == RenderMode::ReSTIRGI)
-        {
-            generateReSTIRGISamples(pRenderContext, renderData, true);
-        }
+            mFrameCount++;
+            if (mRenderMode == RenderMode::ReSTIRGI)
+            {
+                generateReSTIRGISamples(pRenderContext, renderData, true);
+            }
 
-        // Do resampling
-        if ((mRenderMode == RenderMode::ReSTIRFG) || (mRenderMode == RenderMode::ReSTIRGI))
-            resamplingPass(pRenderContext, renderData, true);
+            // Do resampling
+            if ((mRenderMode == RenderMode::ReSTIRFG) || (mRenderMode == RenderMode::ReSTIRGI))
+                resamplingPass(pRenderContext, renderData, true);
+        }
     }
 
     finalShadingPass(pRenderContext, renderData);
