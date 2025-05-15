@@ -99,7 +99,7 @@ if ENABLE_CAMERA_ORIENTATION:
 # Profiler: Disocclusion 效能分析
 if ENABLE_PROFILER:
     frameStart = captureEnd + 10  # 跳過前面 warm up 幀與截圖幀以避免影響分析數據
-    frameEnd = frameStart + 1000  # 統計 1000 幀
+    frameEnd = frameStart + 2000  # 統計 2000 幀
     if ENABLE_AUTO_EXIT:
         m.clock.exitFrame = frameEnd + 5
     meanFrameTime = 0
