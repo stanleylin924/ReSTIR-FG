@@ -408,9 +408,9 @@ void main(uint2 pixel : SV_DispatchThreadID)
         if (is_valid(gOutDisocclusion))
         {
             switch (gDisocclusionMask[pixel]) {
-            case DisocclusionType::kInvalid:
-                gOutDisocclusion[pixel] = float4(0.f, 0.f, 1.f, 1.f);  // Blue
-                break;
+            //case DisocclusionType::kInvalid:
+            //    gOutDisocclusion[pixel] = float4(0.f, 0.f, 1.f, 1.f);  // Blue
+            //    break;
             case DisocclusionType::kOutOfFrame:
                 gOutDisocclusion[pixel] = float4(1.f, 1.f, 0.f, 1.f);  // Yellow
                 break;
