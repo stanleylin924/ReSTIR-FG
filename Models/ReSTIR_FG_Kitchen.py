@@ -55,7 +55,7 @@ m.scene.cameraSpeed = 1.0
 
 # Window Configuration
 m.resizeFrameBuffer(1280, 800)
-# m.resizeFrameBuffer(1000, 800)  # Profiler: 統計 disocclusion 像素個數 vs. 處理耗時，以 1000 為單位便於統計
+# m.resizeFrameBuffer(1000, 1000)  # Profiler: 統計 disocclusion 像素個數 vs. 處理耗時，以 1000 為單位便於統計
 m.ui = True
 
 # Clock Settings
@@ -72,8 +72,8 @@ elif DISOCCLUSION_TESTCASE == 2:
     captureStart = 116
     captureEnd = 153
 elif DISOCCLUSION_TESTCASE == 3:
-    captureStart = 116
-    captureEnd = 150
+    captureStart = 131
+    captureEnd = 143
 elif DISOCCLUSION_TESTCASE == 4:
     captureStart = 116
     captureEnd = 144

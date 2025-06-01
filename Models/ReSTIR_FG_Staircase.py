@@ -49,7 +49,7 @@ def render_graph_ReSTIR_FG():
 m.addGraph(render_graph_ReSTIR_FG())
 
 # Scene
-m.loadScene('D:/3D_Scene/benedikt-bitterli/pbrt-v4/staircase/Staircase_Disocclusion_v1.1.pyscene')
+m.loadScene('D:/3D_Scene/benedikt-bitterli/pbrt-v4/staircase/Staircase_Disocclusion_v1.2.pyscene')
 m.scene.renderSettings = SceneRenderSettings(useEnvLight=True, useAnalyticLights=True, useEmissiveLights=True, useGridVolumes=True, diffuseAlbedoMultiplier=1)
 m.scene.cameraSpeed = 1.0
 
@@ -65,8 +65,8 @@ m.clock.framerate = 30
 
 # Frame Capture
 if DISOCCLUSION_TESTCASE == 1:
-    captureStart = 146
-    captureEnd = 219
+    captureStart = 161
+    captureEnd = 173
 else:
     captureStart = 0
     captureEnd = 500

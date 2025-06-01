@@ -3,6 +3,7 @@ GENERATE_INDIVIDUAL_VIDEOS=false
 GENERATE_MERGE_IMAGES=true
 GENERATE_MERGE_VIDEO=true
 ONE_FRAME_TEST=false
+SHOW_TITLES=true
 
 # 檔案與資料夾名稱
 OUTPUT_FOLDER="Output"                  # 輸出資料夾

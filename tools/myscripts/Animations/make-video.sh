@@ -79,29 +79,31 @@ if [[ "$GENERATE_MERGE_IMAGES" = true ]]; then
             magick.exe "$method/$filename" \
                 -crop "$crop_params" +repage \
                 "$OUTPUT_FOLDER/$method/$filename" || exit 1
-            # 根據是否有副標題來設定主標題的偏移量
-            if [[ -n "$subtitle" ]]; then   # 檢查副標題是否為非空字串
-                title_offset=$((TITLE_OFFSET - SUB_FONT_SIZE / 4))  # 有副標題 => 主標題要向上偏移
-            else
-                title_offset="$TITLE_OFFSET"     # 無副標題 => 主標題維持原始偏移
+            if [[ "$SHOW_TITLES" == true ]]; then
+                # 根據是否有副標題來設定主標題的偏移量
+                if [[ -n "$subtitle" ]]; then   # 檢查副標題是否為非空字串
+                    title_offset=$((TITLE_OFFSET - SUB_FONT_SIZE / 4))  # 有副標題 => 主標題要向上偏移
+                else
+                    title_offset="$TITLE_OFFSET"     # 無副標題 => 主標題維持原始偏移
+                fi
+                # 設定副標題的偏移量
+                subtitle_offset=$((title_offset + FONT_SIZE))
+                # 填入主標題
+                magick.exe "$OUTPUT_FOLDER/$method/$filename" \
+                    -fill "$FONT_FILL" -stroke "$FONT_STROKE" -strokewidth "$FONT_STROKEWIDTH" \
+                    -gravity North -font "$FONT_NAME" \
+                    -pointsize "$FONT_SIZE" -annotate +0+"$title_offset" "$title" \
+                    "$OUTPUT_FOLDER/$method/$filename" || exit 1
+                    # -gravity North          : 垂直靠上並水平置中
+                    # -pointsize "$FONT_SIZE" : 文字大小
+                    # -annotate +0+10         : 向下偏移 10 像素
+                # 填入副標題
+                magick.exe "$OUTPUT_FOLDER/$method/$filename" \
+                    -fill "$SUB_FONT_FILL" -stroke "$SUB_FONT_STROKE" -strokewidth "$SUB_FONT_STROKEWIDTH" \
+                    -gravity North -font "$SUB_FONT_NAME" \
+                    -pointsize "$SUB_FONT_SIZE" -annotate +0+"$subtitle_offset" "$subtitle" \
+                    "$OUTPUT_FOLDER/$method/$filename" || exit 1
             fi
-            # 設定副標題的偏移量
-            subtitle_offset=$((title_offset + FONT_SIZE))
-            # 填入主標題
-            magick.exe "$OUTPUT_FOLDER/$method/$filename" \
-                -fill "$FONT_FILL" -stroke "$FONT_STROKE" -strokewidth "$FONT_STROKEWIDTH" \
-                -gravity North -font "$FONT_NAME" \
-                -pointsize "$FONT_SIZE" -annotate +0+"$title_offset" "$title" \
-                "$OUTPUT_FOLDER/$method/$filename" || exit 1
-                # -gravity North          : 垂直靠上並水平置中
-                # -pointsize "$FONT_SIZE" : 文字大小
-                # -annotate +0+10         : 向下偏移 10 像素
-            # 填入副標題
-            magick.exe "$OUTPUT_FOLDER/$method/$filename" \
-                -fill "$SUB_FONT_FILL" -stroke "$SUB_FONT_STROKE" -strokewidth "$SUB_FONT_STROKEWIDTH" \
-                -gravity North -font "$SUB_FONT_NAME" \
-                -pointsize "$SUB_FONT_SIZE" -annotate +0+"$subtitle_offset" "$subtitle" \
-                "$OUTPUT_FOLDER/$method/$filename" || exit 1
         done
         # 構建圖片清單
         image_list=()  # 初始化圖片清單變數

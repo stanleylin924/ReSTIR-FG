@@ -67,7 +67,7 @@ m.clock.framerate = 30
 if DISOCCLUSION_TESTCASE == 1:
     m.resizeFrameBuffer(515, 800)
     captureStart = 281
-    captureEnd = 324
+    captureEnd = 294
 elif DISOCCLUSION_TESTCASE == 2:
     captureStart = 130
     captureEnd = 222
